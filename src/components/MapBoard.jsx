@@ -46,25 +46,19 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.addSource('connections-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.current.addSource('retc-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
-    // Buffer Background
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
 
-    // 1. LAS LÍNEAS (Conexiones - Cian transparente)
+    // LÍNEAS DE CONEXIÓN
     map.current.addLayer({
       id: 'connections-line',
       type: 'line',
       source: 'connections-source',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': '#22d3ee', 
-        'line-width': 1.5,
-        'line-opacity': 0.4,
-        'line-dasharray': [1, 3] 
-      }
+      paint: { 'line-color': '#22d3ee', 'line-width': 1.5, 'line-opacity': 0.4, 'line-dasharray': [1, 3] }
     }, firstSymbolId);
 
-    // 🔴 2. ETIQUETAS DE DISTANCIA (CORREGIDAS)
+    // ETIQUETAS (Estilo limpio)
     map.current.addLayer({
       id: 'connections-label',
       type: 'symbol',
@@ -73,19 +67,17 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         'text-field': ['get', 'distLabel'],
         'symbol-placement': 'line-center',
         'text-size': 12,
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'], 
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         'text-offset': [0, -0.8],
-        // 🔴 CORRECCIÓN 1: Evitar duplicación al hacer zoom
-        'text-allow-overlap': false,   // Ya no permitimos que se encimen
-        'text-ignore-placement': false, // Respetar la colocación estándar
-        'text-padding': 5 // Un poco de espacio extra alrededor
+        'text-allow-overlap': false, // No permitir superposición (Zoom fix)
+        'text-ignore-placement': false,
+        'text-padding': 5
       },
       paint: {
-        // 🔴 CORRECCIÓN 2: Color más suave y transparente
-        'text-color': 'rgba(255, 255, 255, 0.9)', // Blanco con un poco de transparencia
-        'text-halo-color': '#0f172a',  // Halo oscuro para contraste
+        'text-color': 'rgba(255, 255, 255, 0.9)', // Blanco con ligera transparencia
+        'text-halo-color': '#0f172a', // Halo oscuro
         'text-halo-width': 2,
-        'text-opacity': 0.8 // Opacidad general reducida al 80%
+        'text-opacity': 0.8
       }
     });
 
@@ -119,7 +111,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       zoom: 10,
       attributionControl: false,
       doubleClickZoom: true,
-      preserveDrawingBuffer: true 
+      preserveDrawingBuffer: true // Fix para html2canvas (Pantalla negra)
     });
 
     map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
@@ -178,7 +170,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
          else map.current.setFilter('retc-pulse', ['in', 'id_vu', 'NonExistentID']);
       }
 
-      // GENERACIÓN DE LÍNEAS CON ETIQUETAS
+      // Generar líneas
       const connectionLines = {
         type: 'FeatureCollection',
         features: pointsWithin.features.map(feature => {
@@ -198,16 +190,13 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     }
   };
 
-  // CORRECCIÓN AQUÍ: Evitar NaN en el primer frame
   const animatePulse = (timestamp) => {
-    // Si timestamp es undefined (primera llamada manual), usamos el tiempo actual
-    if (!timestamp) timestamp = performance.now();
+    if (!timestamp) timestamp = performance.now(); // Fix NaN
 
     if (map.current && map.current.getLayer('retc-pulse')) {
       const opacity = (Math.sin(timestamp / 500) + 1) / 2 * 0.6 + 0.2; 
       const radius = 15 + (Math.sin(timestamp / 500) * 3); 
       
-      // Protecciones extra por si el cálculo falla
       if (!isNaN(opacity) && !isNaN(radius)) {
         map.current.setPaintProperty('retc-pulse', 'circle-opacity', opacity);
         map.current.setPaintProperty('retc-pulse', 'circle-radius', radius);
@@ -250,7 +239,12 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
 
   return (
     <div ref={mapContainer} className="w-full h-screen absolute top-0 left-0">
-      <button onClick={toggleScanMode} className={`absolute top-24 right-2.5 z-10 p-2.5 rounded-lg shadow-xl border transition-all duration-300 group ${isScanMode ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-slate-900/90 backdrop-blur border-slate-600 text-slate-400 hover:text-white hover:border-slate-500'}`} title="Activar modo análisis">
+      <button 
+        onClick={toggleScanMode} 
+        // 🔴 AQUÍ ESTÁ EL CAMBIO DE POSICIÓN: top-20 right-4
+        className={`absolute top-20 right-4 z-10 p-2.5 rounded-lg shadow-xl border transition-all duration-300 group ${isScanMode ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-slate-900/90 backdrop-blur border-slate-600 text-slate-400 hover:text-white hover:border-slate-500'}`} 
+        title="Activar modo análisis"
+      >
         <ScanEye size={20} className={isScanMode ? 'animate-pulse' : ''} />
       </button>
 
