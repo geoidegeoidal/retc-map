@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import MapBoard from './components/MapBoard';
 import SearchBar from './components/SearchBar';
 import { analyzeLocation } from './utils/analysis';
-import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, Download, Image as ImageIcon, FileText } from 'lucide-react';
+import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Download, Image as ImageIcon, FileText } from 'lucide-react';
 import HistoryChart from './components/HistoryChart';
 import SmartReport from './components/SmartReport';
 import html2canvas from 'html2canvas';
@@ -22,28 +22,14 @@ function App() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    // 🔴 CORRECCIÓN CRÍTICA PARA GITHUB PAGES
-    // Detectamos la ruta base dinámicamente
+    // Detectar ruta base para GitHub Pages o Local
     const baseUrl = import.meta.env.BASE_URL;
-    const dataUrl = `${baseUrl}retc_data.geojson`.replace('//', '/'); // Evita dobles slashes
-
-    console.log("Intentando cargar datos desde:", dataUrl);
+    const dataUrl = `${baseUrl}retc_data.geojson`.replace('//', '/');
 
     fetch(dataUrl)
-      .then(r => {
-        if (!r.ok) throw new Error(`Error HTTP ${r.status} al cargar ${dataUrl}`);
-        return r.json();
-      })
-      .then(data => { 
-        console.log("✅ Datos cargados:", data.features.length);
-        setGeoData(data); 
-        setLoading(false); 
-      })
-      .catch(e => { 
-        console.error("❌ Error Fatal:", e); 
-        setLoading(false); 
-        alert("Error cargando datos. Revisa la consola (F12).");
-      });
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => { setGeoData(data); setLoading(false); })
+      .catch(e => { console.error(e); setLoading(false); });
   }, []);
 
   useEffect(() => {
@@ -92,36 +78,19 @@ function App() {
         tempImg.style.pointerEvents = 'none';
         mapContainer.appendChild(tempImg);
         mapCanvas.style.visibility = 'hidden'; 
-      } catch (e) {
-        console.warn("No se pudo generar imagen temporal:", e);
-      }
+      } catch (e) { console.warn(e); }
     }
 
     const element = document.getElementById('main-container');
-
-    if (!element) {
-      setIsExporting(false);
-      return;
-    }
+    if (!element) { setIsExporting(false); return; }
 
     try {
       const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#0f172a',
-        scale: 2,
-        logging: false,
-        ignoreElements: (node) => {
-            return (
-                node.id === 'export-controls' || 
-                node.id === 'export-overlay' ||
-                node.classList.contains('no-print')
-            );
-        }
+        useCORS: true, allowTaint: true, backgroundColor: '#0f172a', scale: 2, logging: false,
+        ignoreElements: (node) => node.id === 'export-controls' || node.id === 'export-overlay' || node.classList.contains('no-print')
       });
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-
       if (type === 'png') {
         const link = document.createElement('a');
         link.download = `EcoMap_${timestamp}.png`;
@@ -129,18 +98,12 @@ function App() {
         link.click();
       } else if (type === 'pdf') {
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'px',
-          format: [canvas.width / 2, canvas.height / 2]
-        });
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2] });
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
         pdf.save(`EcoMap_${timestamp}.pdf`);
       }
-    } catch (err) {
-      console.error("Error exportando:", err);
-      alert("Error al generar la imagen.");
-    } finally {
+    } catch (err) { alert("Error al exportar."); } 
+    finally {
       if (tempImg) tempImg.remove();
       if (mapCanvas) mapCanvas.style.visibility = 'visible';
       setIsExporting(false);
@@ -150,22 +113,18 @@ function App() {
   return (
     <div id="main-container" className="relative w-full h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
       
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-sm px-4 md:px-0 no-print">
+      {/* BUSCADOR: Ajustado ancho para móvil */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-sm md:px-0 no-print">
         <SearchBar onSelectLocation={handleSearchSelect} />
       </div>
 
-      <div id="export-controls" className="absolute top-4 right-4 z-20 flex flex-col items-end">
-         <button onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-lg border border-slate-600 shadow-xl transition-all" title="Exportar mapa">
-           <Download size={20} />
-         </button>
+      {/* EXPORTAR: Ajustado posición para móvil */}
+      <div id="export-controls" className="absolute top-20 right-4 md:top-4 md:right-4 z-20 flex flex-col items-end">
+         <button onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-lg border border-slate-600 shadow-xl transition-all"><Download size={20} /></button>
          {isExportMenuOpen && (
            <div className="mt-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 w-40">
-              <button onClick={() => handleExport('png')} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-sm text-left transition-colors text-slate-300 hover:text-white border-b border-slate-800">
-                <ImageIcon size={16} className="text-emerald-400" /> <span>Imagen PNG</span>
-              </button>
-              <button onClick={() => handleExport('pdf')} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-sm text-left transition-colors text-slate-300 hover:text-white">
-                <FileText size={16} className="text-rose-400" /> <span>Reporte PDF</span>
-              </button>
+              <button onClick={() => handleExport('png')} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-sm text-left text-slate-300 hover:text-white border-b border-slate-800"><ImageIcon size={16} className="text-emerald-400" /> <span>Imagen PNG</span></button>
+              <button onClick={() => handleExport('pdf')} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-sm text-left text-slate-300 hover:text-white"><FileText size={16} className="text-rose-400" /> <span>Reporte PDF</span></button>
            </div>
          )}
       </div>
@@ -178,23 +137,72 @@ function App() {
       )}
 
       <MapBoard 
-        mapData={geoData} 
-        onLocationSelect={handleMapClick} 
-        flyToLocation={targetLocation} 
-        radius={radius}
-        highlightedName={highlightedIndustry}
+        mapData={geoData} onLocationSelect={handleMapClick} flyToLocation={targetLocation} radius={radius} highlightedName={highlightedIndustry}
       />
 
       {loading && <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80"><div className="text-emerald-400 font-bold animate-pulse">Cargando...</div></div>}
 
+      {/* 🔴 PANEL RESPONSIVO (BOTTOM SHEET vs SIDEBAR) 
+          - Móvil: fixed bottom-0 w-full rounded-t-2xl
+          - Desktop (md): fixed left-4 top-20 w-80 rounded-2xl
+      */}
       {analysis && (
-        <div className={`fixed top-20 bottom-4 left-4 z-20 w-80 transition-transform duration-300 ease-in-out ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+2rem)]'}`}>
-          <button onClick={() => setIsPanelOpen(!isPanelOpen)} className={`absolute top-0 -right-8 w-8 h-10 bg-slate-800 border-y border-r border-slate-600 text-emerald-400 hover:text-white hover:bg-slate-700 rounded-r-lg shadow-lg flex items-center justify-center transition-opacity duration-300 no-print ${isPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div 
+          className={`
+            fixed z-30 transition-transform duration-300 ease-in-out shadow-2xl border-slate-700
+            bg-slate-900/95 backdrop-blur-md
+            
+            /* ESTILOS MÓVIL (Base) */
+            bottom-0 left-0 right-0 w-full 
+            rounded-t-2xl border-t border-x
+            max-h-[60vh] /* Ocupa máximo 60% de la pantalla */
+            flex flex-col
+
+            /* ESTILOS DESKTOP (md) */
+            md:top-20 md:bottom-4 md:left-4 md:right-auto md:w-80 md:max-h-none
+            md:rounded-2xl md:border
+            md:block
+
+            /* ANIMACIÓN DE ENTRADA/SALIDA */
+            ${isPanelOpen 
+              ? 'translate-y-0 md:translate-x-0'  // Abierto: En su sitio
+              : 'translate-y-[calc(100%-3rem)] md:-translate-x-[calc(100%+2rem)]' // Cerrado: Abajo (móvil) o Izquierda (PC)
+            }
+          `}
+        >
+          {/* 🔴 BOTÓN TOGGLE (HANDLE)
+             - Móvil: Una barra en la parte superior para tocar
+             - Desktop: La flecha lateral de siempre
+          */}
+          
+          {/* Versión MÓVIL: Handle superior */}
+          <div 
+            onClick={() => setIsPanelOpen(!isPanelOpen)}
+            className="md:hidden w-full h-8 flex items-center justify-center cursor-pointer border-b border-white/5 active:bg-white/5"
+          >
+            {/* Pequeña barra visual de "arrastre" */}
+            <div className="w-12 h-1 bg-slate-600 rounded-full mb-1"></div>
+          </div>
+
+          {/* Versión DESKTOP: Botón lateral */}
+          <button 
+            onClick={() => setIsPanelOpen(!isPanelOpen)}
+            className={`
+              hidden md:flex 
+              absolute top-0 -right-8 w-8 h-10 
+              bg-slate-800 border-y border-r border-slate-600 
+              text-emerald-400 hover:text-white hover:bg-slate-700
+              rounded-r-lg shadow-lg items-center justify-center
+              transition-opacity duration-300 no-print
+              ${isPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+            `}
+          >
             <ChevronLeft size={20} />
           </button>
 
-          <div className="h-full w-full bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col">
-            <div className="p-5">
+          {/* CONTENIDO SCROLLEABLE */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-5">
+              
               <div className="flex justify-between items-start mb-4 border-b border-slate-700 pb-4">
                  <div>
                    <h1 className="text-lg font-bold text-white leading-none flex items-center gap-2"><Layers size={18} className="text-emerald-400"/> Análisis Zonal</h1>
@@ -237,13 +245,16 @@ function App() {
                     </div>
                   </div>
               )}
-            </div>
           </div>
         </div>
       )}
 
+      {/* BOTÓN FLOTANTE PARA REABRIR (Solo Desktop) */}
       {analysis && !isPanelOpen && (
-        <button onClick={() => setIsPanelOpen(true)} className="absolute left-0 top-20 bg-slate-900 border-r border-y border-slate-600 text-emerald-400 p-3 rounded-r-xl shadow-2xl hover:bg-slate-800 hover:text-white transition-all animate-in slide-in-from-left-2 z-20 no-print">
+        <button 
+          onClick={() => setIsPanelOpen(true)}
+          className="hidden md:flex absolute left-0 top-20 bg-slate-900 border-r border-y border-slate-600 text-emerald-400 p-3 rounded-r-xl shadow-2xl hover:bg-slate-800 hover:text-white transition-all animate-in slide-in-from-left-2 z-20 no-print"
+        >
           <ChevronRight size={24} />
         </button>
       )}
