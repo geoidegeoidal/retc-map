@@ -46,19 +46,25 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.addSource('connections-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.current.addSource('retc-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
+    // Buffer Background
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
 
-    // LÍNEAS DE CONEXIÓN
+    // 1. LAS LÍNEAS (Conexiones - Cian transparente)
     map.current.addLayer({
       id: 'connections-line',
       type: 'line',
       source: 'connections-source',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#22d3ee', 'line-width': 1.5, 'line-opacity': 0.4, 'line-dasharray': [1, 3] }
+      paint: {
+        'line-color': '#22d3ee', 
+        'line-width': 1.5,
+        'line-opacity': 0.4,
+        'line-dasharray': [1, 3] 
+      }
     }, firstSymbolId);
 
-    // ETIQUETAS BLANCAS CON HALO
+    // 🔴 2. ETIQUETAS DE DISTANCIA (CORREGIDAS)
     map.current.addLayer({
       id: 'connections-label',
       type: 'symbol',
@@ -67,16 +73,19 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         'text-field': ['get', 'distLabel'],
         'symbol-placement': 'line-center',
         'text-size': 12,
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'], 
         'text-offset': [0, -0.8],
-        'text-allow-overlap': true,
-        'text-ignore-placement': true
+        // 🔴 CORRECCIÓN 1: Evitar duplicación al hacer zoom
+        'text-allow-overlap': false,   // Ya no permitimos que se encimen
+        'text-ignore-placement': false, // Respetar la colocación estándar
+        'text-padding': 5 // Un poco de espacio extra alrededor
       },
       paint: {
-        'text-color': '#ffffff',
-        'text-halo-color': '#0f172a',
+        // 🔴 CORRECCIÓN 2: Color más suave y transparente
+        'text-color': 'rgba(255, 255, 255, 0.9)', // Blanco con un poco de transparencia
+        'text-halo-color': '#0f172a',  // Halo oscuro para contraste
         'text-halo-width': 2,
-        'text-opacity': 1
+        'text-opacity': 0.8 // Opacidad general reducida al 80%
       }
     });
 
@@ -118,7 +127,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.on('load', () => {
       initializeLayers();
       setIsMapReady(true);
-      animatePulse(); // Inicia la animación
+      animatePulse();
     });
 
     map.current.on('click', (e) => {
@@ -189,7 +198,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     }
   };
 
-  // 🔴 CORRECCIÓN AQUÍ: Evitar NaN en el primer frame
+  // CORRECCIÓN AQUÍ: Evitar NaN en el primer frame
   const animatePulse = (timestamp) => {
     // Si timestamp es undefined (primera llamada manual), usamos el tiempo actual
     if (!timestamp) timestamp = performance.now();
