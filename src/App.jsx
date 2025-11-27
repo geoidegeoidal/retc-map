@@ -5,8 +5,6 @@ import { analyzeLocation } from './utils/analysis';
 import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, Download, Image as ImageIcon, FileText } from 'lucide-react';
 import HistoryChart from './components/HistoryChart';
 import SmartReport from './components/SmartReport';
-
-// Librerías de exportación
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -24,10 +22,28 @@ function App() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    fetch('/retc_data.geojson')
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => { setGeoData(data); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
+    // 🔴 CORRECCIÓN CRÍTICA PARA GITHUB PAGES
+    // Detectamos la ruta base dinámicamente
+    const baseUrl = import.meta.env.BASE_URL;
+    const dataUrl = `${baseUrl}retc_data.geojson`.replace('//', '/'); // Evita dobles slashes
+
+    console.log("Intentando cargar datos desde:", dataUrl);
+
+    fetch(dataUrl)
+      .then(r => {
+        if (!r.ok) throw new Error(`Error HTTP ${r.status} al cargar ${dataUrl}`);
+        return r.json();
+      })
+      .then(data => { 
+        console.log("✅ Datos cargados:", data.features.length);
+        setGeoData(data); 
+        setLoading(false); 
+      })
+      .catch(e => { 
+        console.error("❌ Error Fatal:", e); 
+        setLoading(false); 
+        alert("Error cargando datos. Revisa la consola (F12).");
+      });
   }, []);
 
   useEffect(() => {
@@ -54,49 +70,36 @@ function App() {
     if (lastClickedCoords) performAnalysis(lastClickedCoords, newRadius);
   };
 
-  // 🔴 FUNCIÓN DE EXPORTACIÓN "TÉCNICA DEL DOBLE" (FIX PANTALLA NEGRA)
   const handleExport = async (type) => {
     setIsExporting(true);
     setIsExportMenuOpen(false);
-
-    // 1. Esperar a que la UI se calme
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // 2. TRUCO DE MAGIA: Buscar el canvas del mapa y convertirlo a imagen
     const mapCanvas = document.querySelector('.maplibregl-canvas');
     const mapContainer = document.querySelector('.maplibregl-map');
     let tempImg = null;
 
     if (mapCanvas && mapContainer) {
       try {
-        // Creamos una imagen con los datos exactos del mapa actual
         tempImg = document.createElement('img');
-        tempImg.src = mapCanvas.toDataURL(); // Extraemos la foto del WebGL
-        
-        // Estilos para que calce perfecto encima del mapa
+        tempImg.src = mapCanvas.toDataURL();
         tempImg.style.position = 'absolute';
         tempImg.style.left = '0';
         tempImg.style.top = '0';
         tempImg.style.width = '100%';
         tempImg.style.height = '100%';
-        tempImg.style.zIndex = '0'; // Detrás de los paneles, encima del fondo
+        tempImg.style.zIndex = '0';
         tempImg.style.pointerEvents = 'none';
-        
-        // La inyectamos en el contenedor del mapa
         mapContainer.appendChild(tempImg);
-        
-        // Ocultamos el canvas real para que html2canvas capture la imagen y no el canvas vacío
         mapCanvas.style.visibility = 'hidden'; 
       } catch (e) {
-        console.warn("No se pudo generar la imagen temporal del mapa:", e);
+        console.warn("No se pudo generar imagen temporal:", e);
       }
     }
 
-    // 3. Capturar el contenedor principal
     const element = document.getElementById('main-container');
 
     if (!element) {
-      console.error("No se encontró el contenedor principal");
       setIsExporting(false);
       return;
     }
@@ -106,7 +109,7 @@ function App() {
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#0f172a',
-        scale: 2, // Alta resolución
+        scale: 2,
         logging: false,
         ignoreElements: (node) => {
             return (
@@ -138,10 +141,8 @@ function App() {
       console.error("Error exportando:", err);
       alert("Error al generar la imagen.");
     } finally {
-      // 4. LIMPIEZA: Borrar la imagen temporal y mostrar el mapa real de nuevo
       if (tempImg) tempImg.remove();
       if (mapCanvas) mapCanvas.style.visibility = 'visible';
-      
       setIsExporting(false);
     }
   };
@@ -154,14 +155,9 @@ function App() {
       </div>
 
       <div id="export-controls" className="absolute top-4 right-4 z-20 flex flex-col items-end">
-         <button 
-           onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-           className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-lg border border-slate-600 shadow-xl transition-all"
-           title="Exportar mapa"
-         >
+         <button onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-lg border border-slate-600 shadow-xl transition-all" title="Exportar mapa">
            <Download size={20} />
          </button>
-
          {isExportMenuOpen && (
            <div className="mt-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 w-40">
               <button onClick={() => handleExport('png')} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800 text-sm text-left transition-colors text-slate-300 hover:text-white border-b border-slate-800">
@@ -178,7 +174,6 @@ function App() {
         <div id="export-overlay" className="absolute inset-0 z-[60] bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center cursor-wait">
            <div className="animate-spin text-emerald-500 mb-4"><Download size={40}/></div>
            <p className="text-xl font-bold text-white">Generando captura...</p>
-           <p className="text-sm text-slate-400 mt-2">Mantén la ventana abierta</p>
         </div>
       )}
 
@@ -194,10 +189,7 @@ function App() {
 
       {analysis && (
         <div className={`fixed top-20 bottom-4 left-4 z-20 w-80 transition-transform duration-300 ease-in-out ${isPanelOpen ? 'translate-x-0' : '-translate-x-[calc(100%+2rem)]'}`}>
-          <button 
-            onClick={() => setIsPanelOpen(!isPanelOpen)}
-            className={`absolute top-0 -right-8 w-8 h-10 bg-slate-800 border-y border-r border-slate-600 text-emerald-400 hover:text-white hover:bg-slate-700 rounded-r-lg shadow-lg flex items-center justify-center transition-opacity duration-300 no-print ${isPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          >
+          <button onClick={() => setIsPanelOpen(!isPanelOpen)} className={`absolute top-0 -right-8 w-8 h-10 bg-slate-800 border-y border-r border-slate-600 text-emerald-400 hover:text-white hover:bg-slate-700 rounded-r-lg shadow-lg flex items-center justify-center transition-opacity duration-300 no-print ${isPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <ChevronLeft size={20} />
           </button>
 

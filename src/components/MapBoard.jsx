@@ -46,60 +46,36 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.addSource('connections-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.current.addSource('retc-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
-    // Buffer Background
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
 
-    // 1. LAS LÍNEAS (Conexiones)
     map.current.addLayer({
       id: 'connections-line',
       type: 'line',
       source: 'connections-source',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': '#22d3ee', 
-        'line-width': 1.5,
-        'line-opacity': 0.5,
-        'line-dasharray': [1, 3] 
-      }
+      paint: { 'line-color': '#22d3ee', 'line-width': 1.5, 'line-opacity': 0.4, 'line-dasharray': [1, 3] }
     }, firstSymbolId);
 
-    // 🔴 CONFIGURACIÓN COMÚN PARA EL TEXTO
-    const labelLayout = {
-      'text-field': ['get', 'distLabel'],
-      'symbol-placement': 'line-center',
-      'text-size': 12, // Un poco más grande para que se note el efecto
-      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-      'text-offset': [0, -0.8],
-      'text-allow-overlap': true,
-      'text-ignore-placement': true
-    };
-
-    // 🔴 CAPA 1: EL RESPLANDOR EXTERIOR (Glow ancho y suave)
+    // ETIQUETAS BLANCAS CON HALO
     map.current.addLayer({
-      id: 'connections-label-glow',
+      id: 'connections-label',
       type: 'symbol',
       source: 'connections-source',
-      layout: labelLayout,
+      layout: {
+        'text-field': ['get', 'distLabel'],
+        'symbol-placement': 'line-center',
+        'text-size': 12,
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-offset': [0, -0.8],
+        'text-allow-overlap': true,
+        'text-ignore-placement': true
+      },
       paint: {
-        'text-color': 'transparent', // No queremos ver el texto aquí, solo el halo
-        'text-halo-color': '#0891b2', // Cyan-600 (Cian profundo y saturado)
-        'text-halo-width': 5,        // Halo muy ancho para el resplandor lejano
-        'text-opacity': 0.5          // Semitransparente para que parezca luz difusa
-      }
-    });
-
-    // 🔴 CAPA 2: EL NÚCLEO BRILLANTE (Tubo de luz blanco/cian)
-    map.current.addLayer({
-      id: 'connections-label-core',
-      type: 'symbol',
-      source: 'connections-source',
-      layout: labelLayout,
-      paint: {
-        'text-color': '#ffffff',     // Núcleo blanco puro para máxima intensidad
-        'text-halo-color': '#22d3ee', // Cyan-400 (Cian brillante y claro)
-        'text-halo-width': 1.5,      // Halo fino y nítido alrededor del núcleo
-        'text-opacity': 1            // Opacidad total para el núcleo
+        'text-color': '#ffffff',
+        'text-halo-color': '#0f172a',
+        'text-halo-width': 2,
+        'text-opacity': 1
       }
     });
 
@@ -198,10 +174,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         features: pointsWithin.features.map(feature => {
           const dist = turf.distance(center, feature.geometry.coordinates, { units: 'kilometers' });
           const line = turf.lineString([center, feature.geometry.coordinates]);
-          
-          line.properties = {
-            distLabel: `${dist.toFixed(2)} km` 
-          };
+          line.properties = { distLabel: `${dist.toFixed(2)} km` };
           return line;
         })
       };
