@@ -1,0 +1,245 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "12301",
+        "name": "Termoeléctrica Renca",
+        "category": "Generación Eléctrica",
+        "history": [
+          { "year": 2019, "value": 1200 },
+          { "year": 2020, "value": 1150 },
+          { "year": 2021, "value": 1100 },
+          { "year": 2022, "value": 1080 },
+          { "year": 2023, "value": 1050 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7025, -33.4086] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "55201",
+        "name": "Química Industrial Maipú",
+        "category": "Sustancias Químicas",
+        "history": [
+          { "year": 2019, "value": 300 },
+          { "year": 2020, "value": 350 },
+          { "year": 2021, "value": 400 },
+          { "year": 2022, "value": 550 },
+          { "year": 2023, "value": 600 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7725, -33.5086] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "88210",
+        "name": "Papelera Cordillera",
+        "category": "Celulosa y Papel",
+        "history": [
+          { "year": 2019, "value": 850 },
+          { "year": 2020, "value": 800 },
+          { "year": 2021, "value": 780 },
+          { "year": 2022, "value": 760 },
+          { "year": 2023, "value": 740 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.5800, -33.5700] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "33102",
+        "name": "Fundición de Aceros",
+        "category": "Metalurgia",
+        "history": [
+          { "year": 2019, "value": 500 },
+          { "year": 2020, "value": 510 },
+          { "year": 2021, "value": 530 },
+          { "year": 2022, "value": 520 },
+          { "year": 2023, "value": 580 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.6800, -33.4800] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "99100",
+        "name": "Agroalimentos del Sur",
+        "category": "Alimentos",
+        "history": [
+          { "year": 2019, "value": 150 },
+          { "year": 2020, "value": 160 },
+          { "year": 2021, "value": 155 },
+          { "year": 2022, "value": 165 },
+          { "year": 2023, "value": 170 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7500, -33.5200] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "44200",
+        "name": "Cementos Santiago",
+        "category": "Construcción",
+        "history": [
+          { "year": 2019, "value": 600 },
+          { "year": 2020, "value": 650 },
+          { "year": 2021, "value": 700 },
+          { "year": 2022, "value": 750 },
+          { "year": 2023, "value": 800 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7300, -33.3600] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "11200",
+        "name": "Hospital Base (Incinerador)",
+        "category": "Residuos Hospitalarios",
+        "history": [
+          { "year": 2019, "value": 120 },
+          { "year": 2020, "value": 180 },
+          { "year": 2021, "value": 150 },
+          { "year": 2022, "value": 130 },
+          { "year": 2023, "value": 125 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.6450, -33.4550] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "77300",
+        "name": "Planta Tratamiento Aguas",
+        "category": "Saneamiento",
+        "history": [
+          { "year": 2019, "value": 900 },
+          { "year": 2020, "value": 910 },
+          { "year": 2021, "value": 920 },
+          { "year": 2022, "value": 930 },
+          { "year": 2023, "value": 940 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7800, -33.4800] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "22100",
+        "name": "Pinturas y Solventes",
+        "category": "Químicos",
+        "history": [
+          { "year": 2019, "value": 420 },
+          { "year": 2020, "value": 410 },
+          { "year": 2021, "value": 400 },
+          { "year": 2022, "value": 390 },
+          { "year": 2023, "value": 380 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.6400, -33.4900] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "66500",
+        "name": "Vidrios Planos Chile",
+        "category": "Manufactura",
+        "history": [
+          { "year": 2019, "value": 250 },
+          { "year": 2020, "value": 250 },
+          { "year": 2021, "value": 250 },
+          { "year": 2022, "value": 260 },
+          { "year": 2023, "value": 260 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.6900, -33.4300] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "33450",
+        "name": "Curtiembre San Joaquín",
+        "category": "Cueros",
+        "history": [
+          { "year": 2019, "value": 320 },
+          { "year": 2020, "value": 200 },
+          { "year": 2021, "value": 250 },
+          { "year": 2022, "value": 300 },
+          { "year": 2023, "value": 310 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.6300, -33.4900] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "88900",
+        "name": "Logística y Transporte",
+        "category": "Transporte",
+        "history": [
+          { "year": 2019, "value": 100 },
+          { "year": 2020, "value": 80 },
+          { "year": 2021, "value": 90 },
+          { "year": 2022, "value": 110 },
+          { "year": 2023, "value": 150 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7200, -33.3900] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "55600",
+        "name": "Cerámicas Santiago",
+        "category": "Construcción",
+        "history": [
+          { "year": 2019, "value": 480 },
+          { "year": 2020, "value": 490 },
+          { "year": 2021, "value": 500 },
+          { "year": 2022, "value": 510 },
+          { "year": 2023, "value": 520 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7600, -33.5300] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "11101",
+        "name": "Laboratorios Central",
+        "category": "Farmacéutica",
+        "history": [
+          { "year": 2019, "value": 90 },
+          { "year": 2020, "value": 110 },
+          { "year": 2021, "value": 100 },
+          { "year": 2022, "value": 95 },
+          { "year": 2023, "value": 90 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.6500, -33.4400] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id_vu": "77880",
+        "name": "Bebidas del Valle",
+        "category": "Alimentos",
+        "history": [
+          { "year": 2019, "value": 200 },
+          { "year": 2020, "value": 190 },
+          { "year": 2021, "value": 180 },
+          { "year": 2022, "value": 170 },
+          { "year": 2023, "value": 160 }
+        ]
+      },
+      "geometry": { "type": "Point", "coordinates": [-70.7100, -33.4700] }
+    }
+  ]
+}

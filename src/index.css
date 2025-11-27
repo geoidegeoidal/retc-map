@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a; /* Slate 900 */
+  color: #f8fafc; /* Slate 50 */
+  overflow: hidden; /* Evita scrollbars dobles */
+}
+/* PERSONALIZACIÓN DE SCROLLBAR (MODO OSCURO) */
+
+/* El riel (track) de la barra */
+::-webkit-scrollbar {
+  width: 6px; /* Muy delgada */
+  height: 6px;
+}
+
+/* El fondo del riel */
+::-webkit-scrollbar-track {
+  background: #0f172a; /* Slate 900 (Mismo color del fondo) */
+}
+
+/* La barra que se mueve (thumb) */
+::-webkit-scrollbar-thumb {
+  background: #334155; /* Slate 700 */
+  border-radius: 10px;
+}
+
+/* Al pasar el mouse por la barra */
+::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* Slate 600 */
+}
+
+/* CLASE DE UTILIDAD PARA OCULTAR SCROLL LATERAL */
+.no-scrollbar-x {
+  overflow-x: hidden;
+}
