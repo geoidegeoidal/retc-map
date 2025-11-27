@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import MapBoard from '../retc-map/src/components/MapBoard';
-import SearchBar from '../retc-map/src/components/SearchBar';
-import { analyzeLocation } from '../retc-map/src/utils/analysis';
+import MapBoard from './components/MapBoard';
+import SearchBar from './components/SearchBar';
+import { analyzeLocation } from './utils/analysis';
 import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, Download, Image as ImageIcon, FileText } from 'lucide-react';
-import HistoryChart from '../retc-map/src/components/HistoryChart';
-import SmartReport from '../retc-map/src/components/SmartReport';
+import HistoryChart from './components/HistoryChart';
+import SmartReport from './components/SmartReport';
 
 // Librerías de exportación
 import html2canvas from 'html2canvas';
