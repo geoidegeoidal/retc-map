@@ -49,6 +49,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
 
+    // LÍNEAS DE CONEXIÓN
     map.current.addLayer({
       id: 'connections-line',
       type: 'line',
@@ -117,7 +118,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.on('load', () => {
       initializeLayers();
       setIsMapReady(true);
-      animatePulse();
+      animatePulse(); // Inicia la animación
     });
 
     map.current.on('click', (e) => {
@@ -174,7 +175,10 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         features: pointsWithin.features.map(feature => {
           const dist = turf.distance(center, feature.geometry.coordinates, { units: 'kilometers' });
           const line = turf.lineString([center, feature.geometry.coordinates]);
-          line.properties = { distLabel: `${dist.toFixed(2)} km` };
+          
+          line.properties = {
+            distLabel: `${dist.toFixed(2)} km` 
+          };
           return line;
         })
       };
@@ -185,12 +189,20 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     }
   };
 
+  // 🔴 CORRECCIÓN AQUÍ: Evitar NaN en el primer frame
   const animatePulse = (timestamp) => {
+    // Si timestamp es undefined (primera llamada manual), usamos el tiempo actual
+    if (!timestamp) timestamp = performance.now();
+
     if (map.current && map.current.getLayer('retc-pulse')) {
       const opacity = (Math.sin(timestamp / 500) + 1) / 2 * 0.6 + 0.2; 
       const radius = 15 + (Math.sin(timestamp / 500) * 3); 
-      map.current.setPaintProperty('retc-pulse', 'circle-opacity', opacity);
-      map.current.setPaintProperty('retc-pulse', 'circle-radius', radius);
+      
+      // Protecciones extra por si el cálculo falla
+      if (!isNaN(opacity) && !isNaN(radius)) {
+        map.current.setPaintProperty('retc-pulse', 'circle-opacity', opacity);
+        map.current.setPaintProperty('retc-pulse', 'circle-radius', radius);
+      }
     }
     animationRef.current = requestAnimationFrame(animatePulse);
   };
