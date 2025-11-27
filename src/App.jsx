@@ -17,6 +17,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [highlightedIndustry, setHighlightedIndustry] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -51,12 +52,10 @@ function App() {
   return (
     <div id="main-container" className="relative w-full h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
       
-      {/* BUSCADOR: Ancho responsivo */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[85%] max-w-sm md:px-0 no-print">
         <SearchBar onSelectLocation={handleSearchSelect} />
       </div>
 
-      {/* BOTÓN EXPORTAR: Siempre arriba a la derecha (No choca con el Scan que bajaremos) */}
       <div id="export-controls" className="absolute top-4 right-4 z-20 flex flex-col items-end">
          <button onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-lg border border-slate-600 shadow-xl transition-all"><Download size={20} /></button>
          {isExportMenuOpen && (
@@ -73,30 +72,33 @@ function App() {
 
       {loading && <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80"><div className="text-emerald-400 font-bold animate-pulse">Cargando...</div></div>}
 
-      {/* PANEL LATERAL / BOTTOM SHEET */}
+      {/* PANEL RESPONSIVO AJUSTADO */}
       {analysis && (
         <div className={`
             fixed z-30 transition-transform duration-300 ease-in-out shadow-2xl border-slate-700 bg-slate-900/95 backdrop-blur-md
-            /* Móvil: Abajo, altura máxima 60% */
-            bottom-0 left-0 right-0 w-full rounded-t-2xl border-t border-x max-h-[60vh] flex flex-col
-            /* Desktop: Izquierda, altura completa menos márgenes */
+            
+            /* 🔴 AJUSTE MÓVIL: max-h-[45vh] (Menos de la mitad de la pantalla) */
+            bottom-0 left-0 right-0 w-full rounded-t-2xl border-t border-x max-h-[45vh] flex flex-col
+            
+            /* Desktop: Se mantiene igual */
             md:top-20 md:bottom-6 md:left-4 md:right-auto md:w-80 md:max-h-[85vh] md:rounded-2xl md:border
+            
             ${isPanelOpen ? 'translate-y-0 md:translate-x-0' : 'translate-y-[100%] md:-translate-x-[calc(100%+2rem)]'}
         `}>
           {/* Handle Móvil */}
-          <div onClick={() => setIsPanelOpen(!isPanelOpen)} className="md:hidden w-full h-6 flex items-center justify-center cursor-pointer border-b border-white/5 active:bg-white/5 shrink-0">
+          <div onClick={() => setIsPanelOpen(!isPanelOpen)} className="md:hidden w-full h-6 flex items-center justify-center cursor-pointer border-b border-white/5 active:bg-white/5 shrink-0 hover:bg-white/5 transition-colors">
+            {/* Indicador visual de "arrastre" */}
             <div className="w-12 h-1 bg-slate-600 rounded-full"></div>
           </div>
 
-          {/* Botón Desktop */}
+          {/* Botón Cerrar Desktop */}
           <button onClick={() => setIsPanelOpen(!isPanelOpen)} className={`hidden md:flex absolute top-6 -right-8 w-8 h-10 bg-slate-800 border-y border-r border-slate-600 text-emerald-400 hover:text-white hover:bg-slate-700 rounded-r-lg shadow-lg items-center justify-center transition-opacity duration-300 no-print ${isPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <ChevronLeft size={20} />
           </button>
 
-          {/* CONTENIDO INTERNO: Flex column con overflow en el cuerpo, no en el padre */}
-          <div className="flex-1 flex flex-col min-h-0"> {/* min-h-0 es vital para nested scroll */}
+          {/* CONTENIDO INTERNO */}
+          <div className="flex-1 flex flex-col min-h-0">
             
-            {/* Header Fijo */}
             <div className="p-5 pb-0 shrink-0">
                 <div className="flex justify-between items-start mb-4 border-b border-slate-700 pb-4">
                    <div><h1 className="text-lg font-bold text-white leading-none flex items-center gap-2"><Layers size={18} className="text-emerald-400"/> Análisis Zonal</h1><p className="text-xs text-slate-400 mt-1">Radio de impacto</p></div>
@@ -106,9 +108,7 @@ function App() {
                 </div>
             </div>
 
-            {/* Cuerpo Scrolleable: Aquí agregamos el padding bottom extra */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-5 pt-0 pb-10"> {/* pb-10 evita el corte */}
-              
+            <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-5 pt-0 pb-10">
               <div className="mb-4 flex items-end justify-between mt-2">
                   <div><div className={`flex items-center gap-2 text-xl font-bold ${analysis.stats.trend > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{analysis.stats.trend > 0 ? <TrendingUp size={20}/> : <TrendingDown size={20}/>}{Math.abs(analysis.stats.trend).toFixed(1)}%</div><p className="text-xs text-slate-500">Variación (5 años)</p></div>
                   <div className="text-right"><span className="text-3xl font-bold text-white block leading-none">{analysis.stats.count}</span><span className="text-xs text-slate-400">Industrias</span></div>
@@ -122,7 +122,7 @@ function App() {
               <SmartReport analysis={analysis} />
 
               {analysis.nearest && (
-                  <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 mt-4 mb-2"> {/* mb-2 extra */}
+                  <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 mt-4 mb-2">
                     <div className="flex items-start gap-3">
                       <div className="bg-slate-700 p-2 rounded-full mt-1"><Factory size={14} className="text-slate-300" /></div>
                       <div className="w-full">
@@ -142,7 +142,7 @@ function App() {
       )}
 
       {analysis && !isPanelOpen && (
-        <button onClick={() => setIsPanelOpen(true)} className="absolute left-0 top-20 bg-slate-900 border-r border-y border-slate-600 text-emerald-400 p-3 rounded-r-xl shadow-2xl hover:bg-slate-800 hover:text-white transition-all animate-in slide-in-from-left-2 z-20 no-print"><ChevronRight size={24} /></button>
+        <button onClick={() => setIsPanelOpen(true)} className="absolute left-0 top-20 md:top-20 bg-slate-900 border-r border-y border-slate-600 text-emerald-400 p-3 rounded-r-xl shadow-2xl hover:bg-slate-800 hover:text-white transition-all animate-in slide-in-from-left-2 z-20 no-print"><ChevronRight size={24} /></button>
       )}
     </div>
   );
