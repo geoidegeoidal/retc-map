@@ -12,7 +12,7 @@
 
 ## 📸 Vistazo Rápido
 
-*(Aquí puedes arrastrar tus capturas de pantalla del mapa)*
+
 ![Dashboard Preview](https://via.placeholder.com/800x400.png?text=Inserta+aqui+captura+de+EcoMap)
 
 ---
