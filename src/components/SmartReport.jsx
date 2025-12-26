@@ -8,12 +8,11 @@ export default function SmartReport({ analysis }) {
     const { count, trend, topIndustry } = analysis.stats;
     const isHighTrend = trend > 10;
     const isNegativeTrend = trend < 0;
-    // Fix para evitar que diga "undefined" si no hay datos suficientes
     const industryText = topIndustry ? `Principal rubro: ${topIndustry}.` : '';
 
     let title = "";
     let description = "";
-    let tone = "neutral"; 
+    let tone = "neutral";
     let Icon = Minus;
 
     if (count === 0) {
@@ -46,9 +45,9 @@ export default function SmartReport({ analysis }) {
   if (!report) return null;
 
   const colors = {
-    warning: { text: 'text-rose-100', icon: 'text-rose-400', bg: 'from-rose-500 to-orange-500' },
-    success: { text: 'text-emerald-100', icon: 'text-emerald-400', bg: 'from-emerald-500 to-teal-500' },
-    neutral: { text: 'text-slate-100', icon: 'text-blue-400', bg: 'from-blue-500 to-indigo-500' }
+    warning: { text: 'text-rose-100', badgeText: 'text-rose-400', badgeBg: 'bg-rose-500/10 border-rose-500/20', bg: 'from-rose-500 to-orange-500' },
+    success: { text: 'text-emerald-100', badgeText: 'text-emerald-400', badgeBg: 'bg-emerald-500/10 border-emerald-500/20', bg: 'from-emerald-500 to-teal-500' },
+    neutral: { text: 'text-slate-100', badgeText: 'text-blue-400', badgeBg: 'bg-blue-500/10 border-blue-500/20', bg: 'from-blue-500 to-indigo-500' }
   };
 
   const theme = colors[report.tone];
@@ -58,30 +57,26 @@ export default function SmartReport({ analysis }) {
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-10 blur-2xl rounded-full -translate-y-1/2 translate-x-1/2 ${theme.bg}`}></div>
 
       <div className="relative z-10">
-        {/* HEADER: Nivel 4 (Eyebrow) y Nivel 3 (Badge) */}
         <div className="flex items-center justify-between mb-2">
-           <div className="flex items-center gap-2">
-             {/* APLICANDO NIVEL 4: Estandarizado, pequeño, gris */}
-             <span className="font-bold text-slate-400 text-[10px] uppercase tracking-widest">
-               INFORME GENERADO
-             </span>
-           </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-widest">
+              INFORME GENERADO
+            </span>
+          </div>
 
-           {report.tone !== 'neutral' && report.trendVal !== undefined && (
-             // APLICANDO NIVEL 3: Badge pequeño
-             <div className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-slate-900/50 border border-slate-700 ${theme.icon}`}>
-                <report.Icon size={12} />
-                <span>{Math.abs(report.trendVal).toFixed(1)}%</span>
-             </div>
-           )}
+          {/* 🔴 PORCENTAJE RESTAURADO Y RESALTADO */}
+          {report.tone !== 'neutral' && report.trendVal !== undefined && (
+            <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${theme.badgeBg} ${theme.badgeText}`}>
+              <report.Icon size={14} strokeWidth={2.5} />
+              <span>{Math.abs(report.trendVal).toFixed(1)}%</span>
+            </div>
+          )}
         </div>
 
-        {/* TÍTULO: Nivel 1 (Prominente) */}
         <h4 className={`text-base font-bold mb-1.5 leading-tight ${theme.text}`}>
           {report.title}
         </h4>
-        
-        {/* CUERPO: Nivel 2 (Legible) */}
+
         <p className="text-sm text-slate-300 leading-relaxed">
           {report.description}
         </p>
