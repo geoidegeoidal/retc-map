@@ -121,16 +121,23 @@ function App() {
 
               <SmartReport analysis={analysis} />
 
+              {/* 🔴 AQUÍ ESTÁ EL CAMBIO DE DISEÑO (Jerarquía visual arreglada) */}
               {analysis.nearest && (
                   <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700 mt-4 mb-2">
                     <div className="flex items-start gap-3">
-                      <div className="bg-slate-700 p-2 rounded-full mt-1"><Factory size={14} className="text-slate-300" /></div>
-                      <div className="w-full">
-                        <p className="text-xs text-emerald-400 font-bold uppercase mb-0.5">Referencia</p>
-                        <p className="font-semibold text-sm text-white leading-tight">{analysis.nearest.properties.name}</p>
+                      <div className="bg-slate-700 p-2 rounded-full mt-1 shrink-0"><Factory size={14} className="text-slate-300" /></div>
+                      <div className="w-full min-w-0"> {/* min-w-0 evita que el texto rompa el diseño */}
+                        
+                        {/* 1. Header estilo 'Eyebrow' estandarizado (Gris, pequeño, tracking amplio) */}
+                        <p className="font-bold text-slate-400 text-[10px] uppercase tracking-widest mb-1">Referencia más cercana</p>
+                        
+                        {/* 2. Título Nivel 1 (Blanco, bold, base) */}
+                        <p className="font-bold text-base text-white leading-tight truncate">{analysis.nearest.properties.name}</p>
+                        
+                        {/* 3. Metadatos Nivel 3 */}
                         <div className="flex justify-between items-center mt-2">
-                           <span className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-700">{analysis.nearest.properties.category}</span>
-                           <span className="text-xs text-slate-400 font-mono">{analysis.nearest.properties.distance.toFixed(2)} km</span>
+                           <span className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-700 truncate max-w-[60%]">{analysis.nearest.properties.category}</span>
+                           <span className="text-xs text-slate-400 font-mono ml-2 shrink-0">{analysis.nearest.properties.distance.toFixed(2)} km</span>
                         </div>
                       </div>
                     </div>
