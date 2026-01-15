@@ -464,11 +464,11 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
                 key={year}
                 onClick={() => setSelectedYear(year)}
                 className={`text-[9px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-all ${selectedYear === year
-                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                  ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
                   }`}
               >
-                {year.toString().slice(-2)}
+                {year}
               </button>
             ))}
           </div>
