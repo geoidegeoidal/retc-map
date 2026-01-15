@@ -44,26 +44,36 @@ def main():
     for id_vu in establishments:
         est_data = grouped[grouped['id_vu'] == id_vu]
         
-        # Construir historial por año
+        # Construir historial por año y propiedades individuales por año
         history = []
+        total_tonnage = 0
+        year_tonnages = {}  # Para propiedades individuales: tonnage_2021, tonnage_2022, etc.
+        
         for year in years:
             year_data = est_data[est_data['año'] == year]
             value = float(year_data['cantidad_toneladas'].sum()) if len(year_data) > 0 else 0
             history.append({"year": int(year), "value": round(value, 2)})
+            total_tonnage += value
+            year_tonnages[f"tonnage_{int(year)}"] = round(value, 2)
         
         # Obtener datos del establecimiento (primera fila)
         first_row = est_data.iloc[0]
         
+        # Construir properties con tonelajes por año
+        properties = {
+            "id_vu": str(id_vu),
+            "name": str(first_row['razon_social']),
+            "category": str(first_row['rubro']),
+            "comuna": str(first_row['comuna']),
+            "region": str(first_row['region']),
+            "total_tonnage": round(total_tonnage, 2),
+            **year_tonnages,  # Agregar tonnage_2021, tonnage_2022, tonnage_2023, tonnage_2024
+            "history": history
+        }
+        
         feature = {
             "type": "Feature",
-            "properties": {
-                "id_vu": str(id_vu),
-                "name": str(first_row['razon_social']),
-                "category": str(first_row['rubro']),
-                "comuna": str(first_row['comuna']),
-                "region": str(first_row['region']),
-                "history": history
-            },
+            "properties": properties,
             "geometry": {
                 "type": "Point",
                 "coordinates": [float(first_row['longitud']), float(first_row['latitud'])]

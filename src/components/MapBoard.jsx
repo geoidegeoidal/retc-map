@@ -19,6 +19,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
   const [currentLocation, setCurrentLocation] = useState(null);
   const [popupInfo, setPopupInfo] = useState(null);
   const [isScanMode, setIsScanMode] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(2024);
   const isScanModeRef = useRef(isScanMode);
   useEffect(() => { isScanModeRef.current = isScanMode; }, [isScanMode]);
 
@@ -58,79 +59,61 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
 
     // =====================================================
-    // 🔥 CLUSTERS PREMIUM - DISEÑO DE SIGUIENTE NIVEL
+    // CLUSTERS - COLOR ÚNICO (sin diferenciación por cantidad)
     // =====================================================
 
-    // CAPA 1: GLOW EXTERIOR (Halo difuso grande)
+    // CAPA 1: GLOW EXTERIOR
     map.current.addLayer({
       id: 'cluster-glow-outer',
       type: 'circle',
       source: 'retc-source',
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': [
-          'step', ['get', 'point_count'],
-          '#06b6d4',    // Cyan
-          100, '#8b5cf6', // Violeta
-          500, '#f43f5e'  // Rosa fuego
-        ],
+        'circle-color': '#06b6d4',
         'circle-radius': [
           'step', ['get', 'point_count'],
-          35, 100, 45, 500, 60
+          30, 100, 40, 500, 55
         ],
         'circle-opacity': 0.15,
         'circle-blur': 1
       }
     }, firstSymbolId);
 
-    // CAPA 2: GLOW MEDIO (Anillo brillante)
+    // CAPA 2: GLOW MEDIO
     map.current.addLayer({
       id: 'cluster-glow-mid',
       type: 'circle',
       source: 'retc-source',
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': [
-          'step', ['get', 'point_count'],
-          '#22d3ee',    // Cyan claro
-          100, '#a78bfa', // Violeta claro
-          500, '#fb7185'  // Rosa claro
-        ],
+        'circle-color': '#22d3ee',
         'circle-radius': [
           'step', ['get', 'point_count'],
-          25, 100, 32, 500, 45
+          22, 100, 28, 500, 38
         ],
-        'circle-opacity': 0.3,
-        'circle-blur': 0.6
+        'circle-opacity': 0.25,
+        'circle-blur': 0.5
       }
     }, firstSymbolId);
 
-    // CAPA 3: CÍRCULO PRINCIPAL (Gradiente sólido con borde)
+    // CAPA 3: CÍRCULO PRINCIPAL
     map.current.addLayer({
       id: 'clusters',
       type: 'circle',
       source: 'retc-source',
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': [
-          'step', ['get', 'point_count'],
-          '#0891b2',    // Cyan oscuro
-          100, '#7c3aed', // Violeta
-          500, '#e11d48'  // Rosa fuerte
-        ],
+        'circle-color': '#0891b2',
         'circle-radius': [
           'step', ['get', 'point_count'],
-          16, 100, 22, 500, 30
+          14, 100, 18, 500, 24
         ],
-        'circle-stroke-width': [
-          'step', ['get', 'point_count'],
-          2, 100, 3, 500, 4
-        ],
-        'circle-stroke-color': 'rgba(255, 255, 255, 0.5)'
+        'circle-stroke-width': 2,
+        'circle-stroke-color': 'rgba(255, 255, 255, 0.4)'
       }
     }, firstSymbolId);
 
-    // CAPA 4: NÚCLEO BRILLANTE (Punto interior)
+    // CAPA 4: NÚCLEO BRILLANTE
     map.current.addLayer({
       id: 'cluster-core',
       type: 'circle',
@@ -140,14 +123,14 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         'circle-color': '#ffffff',
         'circle-radius': [
           'step', ['get', 'point_count'],
-          4, 100, 6, 500, 8
+          3, 100, 5, 500, 7
         ],
-        'circle-opacity': 0.7,
+        'circle-opacity': 0.6,
         'circle-blur': 0.3
       }
     }, firstSymbolId);
 
-    // ETIQUETAS DE CLUSTERS (cantidad de puntos - estilo bold)
+    // ETIQUETAS DE CLUSTERS
     map.current.addLayer({
       id: 'cluster-count',
       type: 'symbol',
@@ -158,7 +141,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         'text-size': [
           'step', ['get', 'point_count'],
-          11, 100, 13, 500, 16
+          10, 100, 12, 500, 14
         ]
       },
       paint: {
@@ -200,7 +183,12 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       }
     });
 
-    // PUNTOS INDIVIDUALES (solo visibles cuando no hay cluster)
+    // =====================================================
+    // PUNTOS INDIVIDUALES - COLOREADOS POR TONELAJE
+    // Quintiles: <30, 30-170, 170-550, 550-1700, >1700 ton
+    // =====================================================
+
+    // HITBOX (invisible, para clicks)
     map.current.addLayer({
       id: 'retc-points-hitbox',
       type: 'circle',
@@ -209,32 +197,60 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       paint: { 'circle-color': 'transparent', 'circle-radius': 15 }
     });
 
+    // PULSE (para animación)
     map.current.addLayer({
       id: 'retc-pulse', type: 'circle', source: 'retc-source',
       filter: ['all', ['!', ['has', 'point_count']], ['in', 'id_vu', '']],
       paint: { 'circle-color': '#f43f5e', 'circle-radius': 12, 'circle-opacity': 0, 'circle-blur': 0.4 }
     }, firstSymbolId);
 
+    // HIGHLIGHT (para hover desde leyenda)
     map.current.addLayer({
       id: 'retc-highlight', type: 'circle', source: 'retc-source',
       filter: ['all', ['!', ['has', 'point_count']], ['==', 'name', '']],
       paint: { 'circle-color': 'transparent', 'circle-radius': 8, 'circle-stroke-width': 3, 'circle-stroke-color': '#fbbf24', 'circle-opacity': 1 }
     }, firstSymbolId);
 
+    // GLOW POR TONELAJE
     map.current.addLayer({
       id: 'retc-glow',
       type: 'circle',
       source: 'retc-source',
       filter: ['!', ['has', 'point_count']],
-      paint: { 'circle-color': '#00ffff', 'circle-radius': 8, 'circle-opacity': 0.2, 'circle-blur': 0.6 }
+      paint: {
+        'circle-color': [
+          'step', ['get', 'total_tonnage'],
+          '#22c55e',      // Verde < 30
+          30, '#84cc16',  // Lima 30-170
+          170, '#eab308', // Amarillo 170-550
+          550, '#f97316', // Naranja 550-1700
+          1700, '#ef4444' // Rojo > 1700
+        ],
+        'circle-radius': 7,
+        'circle-opacity': 0.25,
+        'circle-blur': 0.5
+      }
     }, firstSymbolId);
 
+    // PUNTOS PRINCIPALES - COLOREADOS POR TONELAJE
     map.current.addLayer({
       id: 'retc-points',
       type: 'circle',
       source: 'retc-source',
       filter: ['!', ['has', 'point_count']],
-      paint: { 'circle-color': '#e0f2fe', 'circle-radius': 3, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#0ea5e9' }
+      paint: {
+        'circle-color': [
+          'step', ['get', 'total_tonnage'],
+          '#22c55e',      // Verde < 30 ton
+          30, '#84cc16',  // Lima 30-170 ton
+          170, '#eab308', // Amarillo 170-550 ton
+          550, '#f97316', // Naranja 550-1700 ton
+          1700, '#ef4444' // Rojo > 1700 ton
+        ],
+        'circle-radius': 4,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': 'rgba(255,255,255,0.5)'
+      }
     }, firstSymbolId);
 
     if (latestProps.current.mapData) map.current.getSource('retc-source').setData(latestProps.current.mapData);
@@ -379,6 +395,30 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
   useEffect(() => { if (isMapReady && mapData && map.current.getSource('retc-source')) { map.current.getSource('retc-source').setData(mapData); } }, [mapData, isMapReady]);
   useEffect(() => { if (isMapReady && currentLocation && radius) { updateMapAnalysisLogic(currentLocation.lng, currentLocation.lat, radius, mapData); } }, [radius, currentLocation, isMapReady, mapData]);
 
+  // EFECTO PARA ACTUALIZAR COLORES DE PUNTOS SEGÚN AÑO SELECCIONADO
+  useEffect(() => {
+    if (!isMapReady || !map.current) return;
+
+    const tonnageProperty = `tonnage_${selectedYear}`;
+    const colorExpression = [
+      'step', ['get', tonnageProperty],
+      '#22c55e',      // Verde < 30
+      30, '#84cc16',  // Lima 30-170
+      170, '#eab308', // Amarillo 170-550
+      550, '#f97316', // Naranja 550-1700
+      1700, '#ef4444' // Rojo > 1700
+    ];
+
+    // Actualizar capa de puntos principales
+    if (map.current.getLayer('retc-points')) {
+      map.current.setPaintProperty('retc-points', 'circle-color', colorExpression);
+    }
+    // Actualizar capa de glow
+    if (map.current.getLayer('retc-glow')) {
+      map.current.setPaintProperty('retc-glow', 'circle-color', colorExpression);
+    }
+  }, [selectedYear, isMapReady]);
+
   useEffect(() => {
     if (isMapReady && flyToLocation) {
       const { lng, lat } = flyToLocation;
@@ -413,27 +453,55 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         <ScanEye size={20} className={isScanMode ? 'animate-pulse' : ''} />
       </button>
 
-      {/* LEYENDA DE CLUSTERS - Responsiva */}
-      <div className="absolute bottom-20 md:bottom-6 left-2 md:left-4 z-10 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl p-2 md:p-3 shadow-xl max-w-[140px] md:max-w-none">
-        <p className="text-[9px] md:text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5 md:mb-2">Densidad</p>
+      {/* LEYENDA POR TONELAJE CON SELECTOR DE AÑO */}
+      <div className="absolute bottom-20 md:bottom-6 left-2 md:left-4 z-10 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl p-2 md:p-3 shadow-xl max-w-[160px] md:max-w-none">
+        {/* SELECTOR DE AÑO */}
+        <div className="mb-2 pb-2 border-b border-white/10">
+          <p className="text-[8px] md:text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Año</p>
+          <div className="flex gap-1">
+            {[2021, 2022, 2023, 2024].map(year => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={`text-[9px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-all ${selectedYear === year
+                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                  }`}
+              >
+                {year.toString().slice(-2)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ESCALA DE COLORES */}
+        <p className="text-[8px] md:text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Toneladas/{selectedYear}</p>
         <div className="flex flex-col gap-1 md:gap-1.5">
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-cyan-600 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 100</span>
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 30</span>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-violet-600 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">100-500</span>
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-lime-500 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">30-170</span>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-rose-600 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 500</span>
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-500 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">170-550</span>
+          </div>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-500 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">550-1.7k</span>
+          </div>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 1.7k</span>
           </div>
         </div>
         <div className="hidden md:block mt-2 pt-2 border-t border-white/5">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-sky-300 border border-sky-500"></div>
-            <span className="text-[10px] text-slate-400">Punto individual</span>
+            <div className="w-3 h-3 rounded-full bg-cyan-600 border border-white/30"></div>
+            <span className="text-[10px] text-slate-400">Cluster</span>
           </div>
         </div>
       </div>
