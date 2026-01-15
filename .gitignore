@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Data files (too large for GitHub)
+*.xlsx
+*.xls
+*.csv
