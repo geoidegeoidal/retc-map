@@ -59,6 +59,7 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
     },
     chartData: chartData,
     lineKeys: lineKeys, // <--- ESTO ES NUEVO: Le dice al gráfico qué lineas dibujar
-    nearest: enrichedFeatures.sort((a, b) => a.properties.distance - b.properties.distance)[0]
+    nearest: enrichedFeatures.sort((a, b) => a.properties.distance - b.properties.distance)[0],
+    topIds: topEmitters.map(f => f.properties.id_vu) // NUEVO: IDs para resaltar en el mapa
   };
 };

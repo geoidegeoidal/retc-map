@@ -5,7 +5,7 @@ import * as turf from '@turf/turf';
 import MiniChart from './MiniChart';
 import { X, ScanEye } from 'lucide-react';
 
-export default function MapBoard({ mapData, onLocationSelect, flyToLocation, radius, highlightedName }) {
+export default function MapBoard({ mapData, onLocationSelect, flyToLocation, radius, highlightedName, highlightedIds }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -59,8 +59,8 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       type: 'geojson',
       data: { type: 'FeatureCollection', features: [] },
       cluster: true,
-      clusterMaxZoom: 12,    // Desactivar clusters a partir de zoom 12
-      clusterRadius: 60      // Radio de agrupamiento en píxeles
+      clusterMaxZoom: 10,    // Clusters desaparecen antes (zoom 10) para ver puntos individuales
+      clusterRadius: 30      // Radio menor para agrupar menos puntos
     });
 
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
@@ -454,6 +454,24 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     // Actualizar capa de puntos principales
     if (map.current.getLayer('retc-points')) {
       map.current.setPaintProperty('retc-points', 'circle-color', colorExpression);
+
+      // Si hay IDs destacados, aumentar un poco su tamaño para que resalten más
+      let finalSizeExpression = sizeExpression;
+      if (highlightedIds && highlightedIds.length > 0) {
+        const stringIds = highlightedIds.map(String);
+        const isHighlighted = ['in', ['get', 'id_vu'], ['literal', stringIds]];
+
+        // Stroke blanco brillante para los destacados
+        map.current.setPaintProperty('retc-points', 'circle-stroke-color', '#ffffff');
+        map.current.setPaintProperty('retc-points', 'circle-stroke-width', ['case', isHighlighted, 3, 0]);
+
+        // Aumentar tamaño 50% si está destacado
+        // Nota: MapLibre permite expresiones matemáticas con otras expresiones
+        // Pero para mayor seguridad, dejaremos el tamaño base y confiaremos en el stroke grueso blanco
+      } else {
+        map.current.setPaintProperty('retc-points', 'circle-stroke-width', 0);
+      }
+
       map.current.setPaintProperty('retc-points', 'circle-radius', sizeExpression);
       map.current.setFilter('retc-points', visibilityFilter);
     }
@@ -467,7 +485,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     if (map.current.getLayer('retc-points-hitbox')) {
       map.current.setFilter('retc-points-hitbox', visibilityFilter);
     }
-  }, [selectedYear, isMapReady, activeFilters]);
+  }, [selectedYear, isMapReady, activeFilters, highlightedIds]);
 
   useEffect(() => {
     if (isMapReady && flyToLocation) {

@@ -72,7 +72,14 @@ function App() {
 
       {isExporting && <div id="export-overlay" className="absolute inset-0 z-[60] bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center cursor-wait"><div className="animate-spin text-emerald-500 mb-4"><Download size={40} /></div><p className="text-xl font-bold text-white">Generando captura...</p></div>}
 
-      <MapBoard mapData={geoData} onLocationSelect={handleMapClick} flyToLocation={targetLocation} radius={radius} highlightedName={highlightedIndustry} />
+      <MapBoard
+        mapData={geoData}
+        onLocationSelect={handleMapClick}
+        flyToLocation={targetLocation}
+        radius={radius}
+        highlightedName={highlightedIndustry}
+        highlightedIds={analysis?.topIds}
+      />
 
       {loading && <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80"><div className="text-emerald-400 font-bold animate-pulse">Cargando...</div></div>}
 
@@ -120,13 +127,17 @@ function App() {
                     <div className="bg-slate-700 p-2 rounded-full mt-1 shrink-0"><Factory size={14} className="text-slate-300" /></div>
                     <div className="w-full min-w-0">
                       <p className="font-bold text-slate-400 text-[10px] uppercase tracking-widest mb-1">Referencia más cercana</p>
-                      <p className="font-bold text-base text-white leading-tight truncate">{analysis.nearest.properties.name}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        {/* 🔴 CAMBIO: Categoría en CIAN para resaltar */}
-                        <span className="text-[10px] bg-cyan-900/30 px-2 py-0.5 rounded text-cyan-400 border border-cyan-800/50 truncate max-w-[60%] font-bold tracking-wide">
+                      {/* Nombre completo sin truncar, con word-break si es necesario */}
+                      <p className="font-bold text-sm text-white leading-snug break-words mb-1.5">{analysis.nearest.properties.name}</p>
+
+                      <div className="flex flex-wrap gap-2 items-center justify-between">
+                        <span className="text-[10px] bg-cyan-900/30 px-2 py-0.5 rounded text-cyan-400 border border-cyan-800/50 font-bold tracking-wide">
                           {analysis.nearest.properties.category}
                         </span>
-                        <span className="text-xs text-slate-400 font-mono ml-2 shrink-0">{analysis.nearest.properties.distance.toFixed(2)} km</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-slate-400">Total 4 años: <strong className="text-emerald-400">{analysis.nearest.properties.total_tonnage?.toLocaleString('es-CL', { maximumFractionDigits: 0 })} t</strong></span>
+                          <span className="text-xs text-slate-300 font-mono font-bold">{analysis.nearest.properties.distance.toFixed(2)} km</span>
+                        </div>
                       </div>
                     </div>
                   </div>

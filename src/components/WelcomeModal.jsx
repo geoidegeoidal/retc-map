@@ -26,7 +26,7 @@ export default function WelcomeModal({ isOpen, onClose }) {
                         <p className="text-sm text-slate-300 leading-relaxed">
                             Visualiza <span className="text-cyan-400 font-bold">11,444 establecimientos industriales</span> que
                             generan residuos no peligrosos en Chile, con datos oficiales del
-                            <span className="text-cyan-400 font-bold"> SINADER (2021-2024)</span>.
+                            <span className="text-cyan-400 font-bold"> RETC (Registro de Emisiones y Transferencia de Contaminantes) (2021-2024)</span>.
                         </p>
                     </div>
 
