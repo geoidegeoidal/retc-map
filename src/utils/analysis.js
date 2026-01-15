@@ -4,7 +4,7 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
   if (!geoData || !userLocation) return null;
 
   const from = turf.point([userLocation.lng, userLocation.lat]);
-  
+
   // 1. Calcular distancia a todas las industrias
   const enrichedFeatures = geoData.features.map(feature => {
     const distance = turf.distance(from, feature, { units: 'kilometers' });
@@ -26,13 +26,13 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
   const lineKeys = topEmitters.map(f => f.properties.name);
 
   // 4. PIVOTEAR DATOS (Transformación clave para el gráfico multi-línea)
-  // Queremos: [{ year: 2019, "Empresa A": 100, "Empresa B": 50 }, ...]
-  const years = [2019, 2020, 2021, 2022, 2023];
-  
+  // Queremos: [{ year: 2021, "Empresa A": 100, "Empresa B": 50 }, ...]
+  const years = [2021, 2022, 2023, 2024];
+
   const chartData = years.map(year => {
     // Creamos el objeto base del año
     const dataPoint = { year: year.toString() };
-    
+
     // Rellenamos las columnas de cada empresa del Top 5
     topEmitters.forEach(industry => {
       const historyEntry = industry.properties.history.find(h => h.year === year);
@@ -44,12 +44,12 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
   });
 
   // 5. Calcular la tendencia GENERAL de la zona (para el % del encabezado)
-  // Sumamos el total del año 2019 vs 2023 de todas las del radio
-  const total2019 = featuresInRadius.reduce((acc, ind) => acc + (ind.properties.history.find(h=>h.year===2019)?.value || 0), 0);
-  const total2023 = featuresInRadius.reduce((acc, ind) => acc + (ind.properties.history.find(h=>h.year===2023)?.value || 0), 0);
-  
+  // Sumamos el total del año 2021 vs 2024 de todas las del radio
+  const total2021 = featuresInRadius.reduce((acc, ind) => acc + (ind.properties.history.find(h => h.year === 2021)?.value || 0), 0);
+  const total2024 = featuresInRadius.reduce((acc, ind) => acc + (ind.properties.history.find(h => h.year === 2024)?.value || 0), 0);
+
   let trend = 0;
-  if (total2019 > 0) trend = ((total2023 - total2019) / total2019) * 100;
+  if (total2021 > 0) trend = ((total2024 - total2021) / total2021) * 100;
 
   return {
     stats: {
