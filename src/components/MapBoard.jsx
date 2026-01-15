@@ -395,27 +395,50 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
   useEffect(() => { if (isMapReady && mapData && map.current.getSource('retc-source')) { map.current.getSource('retc-source').setData(mapData); } }, [mapData, isMapReady]);
   useEffect(() => { if (isMapReady && currentLocation && radius) { updateMapAnalysisLogic(currentLocation.lng, currentLocation.lat, radius, mapData); } }, [radius, currentLocation, isMapReady, mapData]);
 
-  // EFECTO PARA ACTUALIZAR COLORES DE PUNTOS SEGÚN AÑO SELECCIONADO
+  // EFECTO PARA ACTUALIZAR COLORES Y TAMAÑOS DE PUNTOS SEGÚN AÑO SELECCIONADO
   useEffect(() => {
     if (!isMapReady || !map.current) return;
 
     const tonnageProperty = `tonnage_${selectedYear}`;
+
+    // PALETA MÁS DISTINTIVA: Azul → Violeta → Magenta → Naranja → Rojo
     const colorExpression = [
       'step', ['get', tonnageProperty],
-      '#22c55e',      // Verde < 30
-      30, '#84cc16',  // Lima 30-170
-      170, '#eab308', // Amarillo 170-550
+      '#3b82f6',      // Azul < 30
+      30, '#8b5cf6',  // Violeta 30-170
+      170, '#d946ef', // Magenta 170-550
       550, '#f97316', // Naranja 550-1700
-      1700, '#ef4444' // Rojo > 1700
+      1700, '#dc2626' // Rojo intenso > 1700
+    ];
+
+    // TAMAÑO PROPORCIONAL AL TONELAJE
+    const sizeExpression = [
+      'step', ['get', tonnageProperty],
+      3,              // Pequeño < 30
+      30, 4,          // Medio-pequeño 30-170
+      170, 5,         // Medio 170-550
+      550, 7,         // Grande 550-1700
+      1700, 10        // Muy grande > 1700
+    ];
+
+    const glowSizeExpression = [
+      'step', ['get', tonnageProperty],
+      5,              // Pequeño < 30
+      30, 6,          // Medio-pequeño 30-170
+      170, 8,         // Medio 170-550
+      550, 10,        // Grande 550-1700
+      1700, 14        // Muy grande > 1700
     ];
 
     // Actualizar capa de puntos principales
     if (map.current.getLayer('retc-points')) {
       map.current.setPaintProperty('retc-points', 'circle-color', colorExpression);
+      map.current.setPaintProperty('retc-points', 'circle-radius', sizeExpression);
     }
     // Actualizar capa de glow
     if (map.current.getLayer('retc-glow')) {
       map.current.setPaintProperty('retc-glow', 'circle-color', colorExpression);
+      map.current.setPaintProperty('retc-glow', 'circle-radius', glowSizeExpression);
     }
   }, [selectedYear, isMapReady]);
 
@@ -474,27 +497,27 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
           </div>
         </div>
 
-        {/* ESCALA DE COLORES */}
+        {/* ESCALA DE COLORES - Con tamaños proporcionales */}
         <p className="text-[8px] md:text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Toneladas/{selectedYear}</p>
         <div className="flex flex-col gap-1 md:gap-1.5">
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 border border-white/30 shrink-0"></div>
+            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 border border-white/30 shrink-0"></div>
             <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 30</span>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-lime-500 border border-white/30 shrink-0"></div>
+            <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500 border border-white/30 shrink-0"></div>
             <span className="text-[9px] md:text-[10px] text-slate-300">30-170</span>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-500 border border-white/30 shrink-0"></div>
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-fuchsia-500 border border-white/30 shrink-0"></div>
             <span className="text-[9px] md:text-[10px] text-slate-300">170-550</span>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-500 border border-white/30 shrink-0"></div>
+            <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-orange-500 border border-white/30 shrink-0"></div>
             <span className="text-[9px] md:text-[10px] text-slate-300">550-1.7k</span>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 border border-white/30 shrink-0"></div>
+            <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-600 border border-white/30 shrink-0"></div>
             <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 1.7k</span>
           </div>
         </div>
