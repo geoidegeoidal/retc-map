@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import MapBoard from './components/MapBoard';
 import SearchBar from './components/SearchBar';
 import WelcomeModal from './components/WelcomeModal';
+import ReportTemplate from './components/ReportTemplate';
 import { analyzeLocation } from './utils/analysis';
 import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, Download, Image as ImageIcon, FileText } from 'lucide-react';
 import HistoryChart from './components/HistoryChart';
@@ -22,6 +23,7 @@ function App() {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [reportMapImage, setReportMapImage] = useState(null);
 
   useEffect(() => {
     const baseUrl = import.meta.env.BASE_URL;
@@ -37,24 +39,65 @@ function App() {
   const handleRadiusChange = (newRadius) => { setRadius(newRadius); if (lastClickedCoords) performAnalysis(lastClickedCoords, newRadius); };
 
   const handleExport = async (type) => {
-    setIsExporting(true); setIsExportMenuOpen(false);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const mapCanvas = document.querySelector('.maplibregl-canvas'); const mapContainer = document.querySelector('.maplibregl-map'); let tempImg = null;
-    if (mapCanvas && mapContainer) { try { tempImg = document.createElement('img'); tempImg.src = mapCanvas.toDataURL(); tempImg.style.position = 'absolute'; tempImg.style.left = '0'; tempImg.style.top = '0'; tempImg.style.width = '100%'; tempImg.style.height = '100%'; tempImg.style.zIndex = '0'; tempImg.style.pointerEvents = 'none'; mapContainer.appendChild(tempImg); mapCanvas.style.visibility = 'hidden'; } catch (e) { console.warn(e); } }
-    const element = document.getElementById('main-container');
+    if (!analysis) { alert("Primero debes realizar un análisis zonal."); return; }
+    setIsExporting(true);
+    setIsExportMenuOpen(false);
+
+    // 1. Capturar imagen del mapa actual
+    const mapCanvas = document.querySelector('.maplibregl-canvas');
+    if (mapCanvas) {
+      setReportMapImage(mapCanvas.toDataURL('image/png'));
+    }
+
+    // Esperar a que React renderice el template con la imagen
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const element = document.getElementById('printable-report');
     if (!element) { setIsExporting(false); return; }
+
     try {
-      const canvas = await html2canvas(element, { useCORS: true, allowTaint: true, backgroundColor: '#0f172a', scale: 2, logging: false, ignoreElements: (node) => node.id === 'export-controls' || node.id === 'export-overlay' || node.classList.contains('no-print') });
+      const canvas = await html2canvas(element, {
+        scale: 2, // Mejor calidad
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+      });
+
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      if (type === 'png') { const link = document.createElement('a'); link.download = `EcoMap_${timestamp}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }
-      else if (type === 'pdf') { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2] }); pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2); pdf.save(`EcoMap_${timestamp}.pdf`); }
-    } catch (err) { alert("Error al exportar."); } finally { if (tempImg) tempImg.remove(); if (mapCanvas) mapCanvas.style.visibility = 'visible'; setIsExporting(false); }
+
+      if (type === 'png') {
+        const link = document.createElement('a');
+        link.download = `EcoMap_Reporte_${timestamp}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } else if (type === 'pdf') {
+        // Formato apaisado
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2] });
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+        pdf.save(`EcoMap_Reporte_${timestamp}.pdf`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al generar el reporte.");
+    } finally {
+      setReportMapImage(null);
+      setIsExporting(false);
+    }
   };
 
   return (
     <div id="main-container" className="relative w-full h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
 
       <WelcomeModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
+
+      {/* Plantilla oculta para generación de reportes */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <ReportTemplate
+          id="printable-report"
+          analysis={analysis}
+          mapSnapshot={reportMapImage}
+        />
+      </div>
 
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[85%] max-w-sm md:px-0 no-print">
         <SearchBar onSelectLocation={handleSearchSelect} />
