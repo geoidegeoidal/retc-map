@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import MapBoard from './components/MapBoard';
 import SearchBar from './components/SearchBar';
 import WelcomeModal from './components/WelcomeModal';
+import TutorialOverlay from './components/TutorialOverlay';
 import ReportTemplate from './components/ReportTemplate';
 import { analyzeLocation } from './utils/analysis';
 import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, Download, Image as ImageIcon, FileText } from 'lucide-react';
@@ -23,6 +24,7 @@ function App() {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [reportMapImage, setReportMapImage] = useState(null);
 
   useEffect(() => {
@@ -37,6 +39,8 @@ function App() {
   const handleMapClick = (coords) => { setLastClickedCoords(coords); performAnalysis(coords, radius); };
   const handleSearchSelect = (coords) => { setTargetLocation(coords); setLastClickedCoords(coords); performAnalysis(coords, radius); };
   const handleRadiusChange = (newRadius) => { setRadius(newRadius); if (lastClickedCoords) performAnalysis(lastClickedCoords, newRadius); };
+
+  const handleStartTutorial = () => { setShowWelcome(false); setShowTutorial(true); };
 
   const handleExport = async (type) => {
     if (!analysis) { alert("Primero debes realizar un análisis zonal."); return; }
@@ -88,7 +92,9 @@ function App() {
   return (
     <div id="main-container" className="relative w-full h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
 
-      <WelcomeModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
+      <WelcomeModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} onStartTutorial={handleStartTutorial} />
+
+      {showTutorial && <TutorialOverlay onClose={() => setShowTutorial(false)} />}
 
       {/* Plantilla oculta para generación de reportes */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>

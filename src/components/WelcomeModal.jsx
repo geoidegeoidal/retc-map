@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, MapPin, BarChart3, Filter, Calendar, MousePointer2, Download } from 'lucide-react';
 
-export default function WelcomeModal({ isOpen, onClose }) {
+export default function WelcomeModal({ isOpen, onClose, onStartTutorial }) {
     if (!isOpen) return null;
 
     return (
@@ -109,12 +109,18 @@ export default function WelcomeModal({ isOpen, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-white/10 bg-slate-950/50">
+                <div className="p-4 border-t border-white/10 bg-slate-950/50 flex flex-col gap-3">
+                    <button
+                        onClick={onStartTutorial}
+                        className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-white font-bold rounded-lg transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
+                    >
+                        <span className="text-xl">🎓</span> Ver Tutorial Rápido
+                    </button>
                     <button
                         onClick={onClose}
-                        className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-white font-bold rounded-lg transition-all shadow-lg shadow-cyan-500/20"
+                        className="w-full py-2 text-slate-400 hover:text-white font-semibold text-sm transition-colors"
                     >
-                        ¡Explorar el mapa!
+                        Saltar y explorar el mapa
                     </button>
                 </div>
             </div>
