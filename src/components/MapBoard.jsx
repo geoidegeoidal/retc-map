@@ -271,7 +271,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       container: mapContainer.current,
       style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: [-70.6483, -33.4569],
-      zoom: 10,
+      zoom: 12,
       attributionControl: false,
       doubleClickZoom: true,
       preserveDrawingBuffer: true // Fix para html2canvas (Pantalla negra)
