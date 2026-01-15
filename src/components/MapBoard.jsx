@@ -406,33 +406,24 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         <ScanEye size={20} className={isScanMode ? 'animate-pulse' : ''} />
       </button>
 
-      {/* LEYENDA DE CLUSTERS */}
-      <div className="absolute bottom-6 left-4 z-10 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-xl">
-        <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-2">Densidad Industrial</p>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="w-4 h-4 rounded-full bg-cyan-500/20 blur-[2px] absolute"></div>
-              <div className="w-3 h-3 rounded-full bg-cyan-600 border border-white/30 relative left-0.5 top-0.5"></div>
-            </div>
-            <span className="text-[10px] text-slate-300">&lt; 100 establecimientos</span>
+      {/* LEYENDA DE CLUSTERS - Responsiva */}
+      <div className="absolute bottom-20 md:bottom-6 left-2 md:left-4 z-10 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl p-2 md:p-3 shadow-xl max-w-[140px] md:max-w-none">
+        <p className="text-[9px] md:text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1.5 md:mb-2">Densidad</p>
+        <div className="flex flex-col gap-1 md:gap-1.5">
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-cyan-600 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 100</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="w-4 h-4 rounded-full bg-violet-500/20 blur-[2px] absolute"></div>
-              <div className="w-3 h-3 rounded-full bg-violet-600 border border-white/30 relative left-0.5 top-0.5"></div>
-            </div>
-            <span className="text-[10px] text-slate-300">100 - 500</span>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-violet-600 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">100-500</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div className="w-4 h-4 rounded-full bg-rose-500/20 blur-[2px] absolute"></div>
-              <div className="w-3 h-3 rounded-full bg-rose-600 border border-white/30 relative left-0.5 top-0.5"></div>
-            </div>
-            <span className="text-[10px] text-slate-300">&gt; 500 establecimientos</span>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-rose-600 border border-white/30 shrink-0"></div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 500</span>
           </div>
         </div>
-        <div className="mt-2 pt-2 border-t border-white/5">
+        <div className="hidden md:block mt-2 pt-2 border-t border-white/5">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-sky-300 border border-sky-500"></div>
             <span className="text-[10px] text-slate-400">Punto individual</span>

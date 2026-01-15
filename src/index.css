@@ -41,3 +41,40 @@ body {
 .no-scrollbar-x {
   overflow-x: hidden;
 }
+
+/* CONTROLES DE MAPLIBRE - AJUSTE MÓVIL */
+.maplibregl-ctrl-bottom-right {
+  right: 8px !important;
+  bottom: 80px !important;
+}
+
+@media (min-width: 768px) {
+  .maplibregl-ctrl-bottom-right {
+    right: 10px !important;
+    bottom: 30px !important;
+  }
+}
+
+/* Hacer los botones de zoom más pequeños en móvil */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-zoom-in,
+  .maplibregl-ctrl-zoom-out {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .maplibregl-ctrl-group {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    backdrop-filter: blur(8px);
+  }
+  
+  .maplibregl-ctrl-group button {
+    background-color: transparent !important;
+  }
+  
+  .maplibregl-ctrl-group button + button {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+}
