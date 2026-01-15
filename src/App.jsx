@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import MapBoard from './components/MapBoard';
 import SearchBar from './components/SearchBar';
+import WelcomeModal from './components/WelcomeModal';
 import { analyzeLocation } from './utils/analysis';
 import { Factory, TrendingUp, TrendingDown, Layers, ChevronLeft, ChevronRight, Download, Image as ImageIcon, FileText } from 'lucide-react';
 import HistoryChart from './components/HistoryChart';
@@ -20,6 +21,7 @@ function App() {
 
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
     const baseUrl = import.meta.env.BASE_URL;
@@ -51,6 +53,8 @@ function App() {
 
   return (
     <div id="main-container" className="relative w-full h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
+
+      <WelcomeModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
 
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[85%] max-w-sm md:px-0 no-print">
         <SearchBar onSelectLocation={handleSearchSelect} />

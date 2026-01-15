@@ -20,6 +20,14 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
   const [popupInfo, setPopupInfo] = useState(null);
   const [isScanMode, setIsScanMode] = useState(false);
   const [selectedYear, setSelectedYear] = useState(2024);
+  // Filtros de tonelaje: todos activos por defecto (5 rangos)
+  const [activeFilters, setActiveFilters] = useState({
+    range1: true, // < 30
+    range2: true, // 30-170
+    range3: true, // 170-550
+    range4: true, // 550-1700
+    range5: true  // > 1700
+  });
   const isScanModeRef = useRef(isScanMode);
   useEffect(() => { isScanModeRef.current = isScanMode; }, [isScanMode]);
 
@@ -430,17 +438,36 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       1700, 14        // Muy grande > 1700
     ];
 
+    // CONSTRUIR FILTRO BASADO EN RANGOS ACTIVOS
+    const filterConditions = [];
+    if (activeFilters.range1) filterConditions.push(['<', ['get', tonnageProperty], 30]);
+    if (activeFilters.range2) filterConditions.push(['all', ['>=', ['get', tonnageProperty], 30], ['<', ['get', tonnageProperty], 170]]);
+    if (activeFilters.range3) filterConditions.push(['all', ['>=', ['get', tonnageProperty], 170], ['<', ['get', tonnageProperty], 550]]);
+    if (activeFilters.range4) filterConditions.push(['all', ['>=', ['get', tonnageProperty], 550], ['<', ['get', tonnageProperty], 1700]]);
+    if (activeFilters.range5) filterConditions.push(['>=', ['get', tonnageProperty], 1700]);
+
+    // Combinar filtros: mostrar si cumple cualquiera de los rangos activos Y no es un cluster
+    const visibilityFilter = filterConditions.length > 0
+      ? ['all', ['!', ['has', 'point_count']], ['any', ...filterConditions]]
+      : ['all', ['!', ['has', 'point_count']], false]; // Ocultar todo si ningún filtro activo
+
     // Actualizar capa de puntos principales
     if (map.current.getLayer('retc-points')) {
       map.current.setPaintProperty('retc-points', 'circle-color', colorExpression);
       map.current.setPaintProperty('retc-points', 'circle-radius', sizeExpression);
+      map.current.setFilter('retc-points', visibilityFilter);
     }
     // Actualizar capa de glow
     if (map.current.getLayer('retc-glow')) {
       map.current.setPaintProperty('retc-glow', 'circle-color', colorExpression);
       map.current.setPaintProperty('retc-glow', 'circle-radius', glowSizeExpression);
+      map.current.setFilter('retc-glow', visibilityFilter);
     }
-  }, [selectedYear, isMapReady]);
+    // Actualizar hitbox también
+    if (map.current.getLayer('retc-points-hitbox')) {
+      map.current.setFilter('retc-points-hitbox', visibilityFilter);
+    }
+  }, [selectedYear, isMapReady, activeFilters]);
 
   useEffect(() => {
     if (isMapReady && flyToLocation) {
@@ -476,11 +503,11 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         <ScanEye size={20} className={isScanMode ? 'animate-pulse' : ''} />
       </button>
 
-      {/* LEYENDA POR TONELAJE CON SELECTOR DE AÑO */}
-      <div className="absolute bottom-20 md:bottom-6 left-2 md:left-4 z-10 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl p-2 md:p-3 shadow-xl max-w-[160px] md:max-w-none">
+      {/* LEYENDA CON SELECTOR DE AÑO Y FILTROS */}
+      <div className="absolute bottom-20 md:bottom-6 left-2 md:left-4 z-10 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl p-2 md:p-3 shadow-xl max-w-[170px] md:max-w-[200px]">
         {/* SELECTOR DE AÑO */}
         <div className="mb-2 pb-2 border-b border-white/10">
-          <p className="text-[8px] md:text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Año</p>
+          <p className="text-[7px] md:text-[8px] text-slate-500 uppercase tracking-wider font-bold mb-1">Seleccionar año de datos</p>
           <div className="flex gap-1">
             {[2021, 2022, 2023, 2024].map(year => (
               <button
@@ -497,34 +524,55 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
           </div>
         </div>
 
-        {/* ESCALA DE COLORES - Con tamaños proporcionales */}
-        <p className="text-[8px] md:text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Toneladas/{selectedYear}</p>
+        {/* FILTRO POR TONELAJE - Clickeable */}
+        <p className="text-[7px] md:text-[8px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Filtrar por toneladas ({selectedYear})</p>
         <div className="flex flex-col gap-1 md:gap-1.5">
-          <div className="flex items-center gap-1.5 md:gap-2">
+          {/* Range 1: < 30 */}
+          <button
+            onClick={() => setActiveFilters(f => ({ ...f, range1: !f.range1 }))}
+            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range1 ? 'opacity-100' : 'opacity-40'}`}
+          >
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 30</span>
-          </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 30 ton</span>
+          </button>
+          {/* Range 2: 30-170 */}
+          <button
+            onClick={() => setActiveFilters(f => ({ ...f, range2: !f.range2 }))}
+            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range2 ? 'opacity-100' : 'opacity-40'}`}
+          >
             <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">30-170</span>
-          </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="text-[9px] md:text-[10px] text-slate-300">30-170 ton</span>
+          </button>
+          {/* Range 3: 170-550 */}
+          <button
+            onClick={() => setActiveFilters(f => ({ ...f, range3: !f.range3 }))}
+            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range3 ? 'opacity-100' : 'opacity-40'}`}
+          >
             <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-fuchsia-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">170-550</span>
-          </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="text-[9px] md:text-[10px] text-slate-300">170-550 ton</span>
+          </button>
+          {/* Range 4: 550-1700 */}
+          <button
+            onClick={() => setActiveFilters(f => ({ ...f, range4: !f.range4 }))}
+            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range4 ? 'opacity-100' : 'opacity-40'}`}
+          >
             <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-orange-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">550-1.7k</span>
-          </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="text-[9px] md:text-[10px] text-slate-300">550-1.7k ton</span>
+          </button>
+          {/* Range 5: > 1700 */}
+          <button
+            onClick={() => setActiveFilters(f => ({ ...f, range5: !f.range5 }))}
+            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range5 ? 'opacity-100' : 'opacity-40'}`}
+          >
             <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-600 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 1.7k</span>
-          </div>
+            <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 1.7k ton</span>
+          </button>
         </div>
+        {/* Clusters */}
         <div className="hidden md:block mt-2 pt-2 border-t border-white/5">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-cyan-600 border border-white/30"></div>
-            <span className="text-[10px] text-slate-400">Cluster</span>
+            <span className="text-[10px] text-slate-400">Cluster (agrupados)</span>
           </div>
         </div>
       </div>
