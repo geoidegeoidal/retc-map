@@ -57,7 +57,55 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
 
-    // CAPA DE CLUSTERS (círculos grandes con cantidad)
+    // =====================================================
+    // 🔥 CLUSTERS PREMIUM - DISEÑO DE SIGUIENTE NIVEL
+    // =====================================================
+
+    // CAPA 1: GLOW EXTERIOR (Halo difuso grande)
+    map.current.addLayer({
+      id: 'cluster-glow-outer',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step', ['get', 'point_count'],
+          '#06b6d4',    // Cyan
+          100, '#8b5cf6', // Violeta
+          500, '#f43f5e'  // Rosa fuego
+        ],
+        'circle-radius': [
+          'step', ['get', 'point_count'],
+          35, 100, 45, 500, 60
+        ],
+        'circle-opacity': 0.15,
+        'circle-blur': 1
+      }
+    }, firstSymbolId);
+
+    // CAPA 2: GLOW MEDIO (Anillo brillante)
+    map.current.addLayer({
+      id: 'cluster-glow-mid',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step', ['get', 'point_count'],
+          '#22d3ee',    // Cyan claro
+          100, '#a78bfa', // Violeta claro
+          500, '#fb7185'  // Rosa claro
+        ],
+        'circle-radius': [
+          'step', ['get', 'point_count'],
+          25, 100, 32, 500, 45
+        ],
+        'circle-opacity': 0.3,
+        'circle-blur': 0.6
+      }
+    }, firstSymbolId);
+
+    // CAPA 3: CÍRCULO PRINCIPAL (Gradiente sólido con borde)
     map.current.addLayer({
       id: 'clusters',
       type: 'circle',
@@ -66,22 +114,40 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       paint: {
         'circle-color': [
           'step', ['get', 'point_count'],
-          '#06b6d4',   // Cyan para < 50
-          50, '#8b5cf6', // Violeta para 50-200
-          200, '#f43f5e' // Rosa para > 200
+          '#0891b2',    // Cyan oscuro
+          100, '#7c3aed', // Violeta
+          500, '#e11d48'  // Rosa fuerte
         ],
         'circle-radius': [
           'step', ['get', 'point_count'],
-          18,    // Radio base
-          50, 24,
-          200, 32
+          16, 100, 22, 500, 30
         ],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': 'rgba(255,255,255,0.3)'
+        'circle-stroke-width': [
+          'step', ['get', 'point_count'],
+          2, 100, 3, 500, 4
+        ],
+        'circle-stroke-color': 'rgba(255, 255, 255, 0.5)'
       }
     }, firstSymbolId);
 
-    // ETIQUETAS DE CLUSTERS (cantidad de puntos)
+    // CAPA 4: NÚCLEO BRILLANTE (Punto interior)
+    map.current.addLayer({
+      id: 'cluster-core',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': '#ffffff',
+        'circle-radius': [
+          'step', ['get', 'point_count'],
+          4, 100, 6, 500, 8
+        ],
+        'circle-opacity': 0.7,
+        'circle-blur': 0.3
+      }
+    }, firstSymbolId);
+
+    // ETIQUETAS DE CLUSTERS (cantidad de puntos - estilo bold)
     map.current.addLayer({
       id: 'cluster-count',
       type: 'symbol',
@@ -90,10 +156,15 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       layout: {
         'text-field': '{point_count_abbreviated}',
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': 12
+        'text-size': [
+          'step', ['get', 'point_count'],
+          11, 100, 13, 500, 16
+        ]
       },
       paint: {
-        'text-color': '#ffffff'
+        'text-color': '#ffffff',
+        'text-halo-color': 'rgba(0, 0, 0, 0.5)',
+        'text-halo-width': 1
       }
     });
 
