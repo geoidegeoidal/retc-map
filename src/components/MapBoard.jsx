@@ -11,7 +11,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
   const marker = useRef(null);
   const animationRef = useRef(null);
   const popupRef = useRef(null);
-  
+
   const latestProps = useRef({ mapData, radius, onLocationSelect });
   useEffect(() => { latestProps.current = { mapData, radius, onLocationSelect }; }, [mapData, radius, onLocationSelect]);
 
@@ -44,10 +44,58 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
 
     map.current.addSource('buffer-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.current.addSource('connections-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.current.addSource('retc-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+
+    // Source con CLUSTERING habilitado
+    map.current.addSource('retc-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+      cluster: true,
+      clusterMaxZoom: 12,    // Desactivar clusters a partir de zoom 12
+      clusterRadius: 60      // Radio de agrupamiento en píxeles
+    });
 
     map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
     map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
+
+    // CAPA DE CLUSTERS (círculos grandes con cantidad)
+    map.current.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step', ['get', 'point_count'],
+          '#06b6d4',   // Cyan para < 50
+          50, '#8b5cf6', // Violeta para 50-200
+          200, '#f43f5e' // Rosa para > 200
+        ],
+        'circle-radius': [
+          'step', ['get', 'point_count'],
+          18,    // Radio base
+          50, 24,
+          200, 32
+        ],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': 'rgba(255,255,255,0.3)'
+      }
+    }, firstSymbolId);
+
+    // ETIQUETAS DE CLUSTERS (cantidad de puntos)
+    map.current.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'retc-source',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-size': 12
+      },
+      paint: {
+        'text-color': '#ffffff'
+      }
+    });
 
     // LÍNEAS DE CONEXIÓN
     map.current.addLayer({
@@ -58,7 +106,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       paint: { 'line-color': '#22d3ee', 'line-width': 1.5, 'line-opacity': 0.4, 'line-dasharray': [1, 3] }
     }, firstSymbolId);
 
-    // ETIQUETAS (Estilo limpio)
+    // ETIQUETAS DE DISTANCIA
     map.current.addLayer({
       id: 'connections-label',
       type: 'symbol',
@@ -69,34 +117,54 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         'text-size': 12,
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         'text-offset': [0, -0.8],
-        'text-allow-overlap': false, // No permitir superposición (Zoom fix)
+        'text-allow-overlap': false,
         'text-ignore-placement': false,
         'text-padding': 5
       },
       paint: {
-        'text-color': 'rgba(255, 255, 255, 0.9)', // Blanco con ligera transparencia
-        'text-halo-color': '#0f172a', // Halo oscuro
+        'text-color': 'rgba(255, 255, 255, 0.9)',
+        'text-halo-color': '#0f172a',
         'text-halo-width': 2,
         'text-opacity': 0.8
       }
     });
 
-    map.current.addLayer({ id: 'retc-points-hitbox', type: 'circle', source: 'retc-source', paint: { 'circle-color': 'transparent', 'circle-radius': 20 } });
-    
+    // PUNTOS INDIVIDUALES (solo visibles cuando no hay cluster)
+    map.current.addLayer({
+      id: 'retc-points-hitbox',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['!', ['has', 'point_count']],
+      paint: { 'circle-color': 'transparent', 'circle-radius': 15 }
+    });
+
     map.current.addLayer({
       id: 'retc-pulse', type: 'circle', source: 'retc-source',
-      paint: { 'circle-color': '#f43f5e', 'circle-radius': 18, 'circle-opacity': 0, 'circle-blur': 0.4 },
-      filter: ['in', 'id_vu', '']
+      filter: ['all', ['!', ['has', 'point_count']], ['in', 'id_vu', '']],
+      paint: { 'circle-color': '#f43f5e', 'circle-radius': 12, 'circle-opacity': 0, 'circle-blur': 0.4 }
     }, firstSymbolId);
 
     map.current.addLayer({
       id: 'retc-highlight', type: 'circle', source: 'retc-source',
-      paint: { 'circle-color': 'transparent', 'circle-radius': 12, 'circle-stroke-width': 4, 'circle-stroke-color': '#fbbf24', 'circle-opacity': 1 },
-      filter: ['==', 'name', '']
+      filter: ['all', ['!', ['has', 'point_count']], ['==', 'name', '']],
+      paint: { 'circle-color': 'transparent', 'circle-radius': 8, 'circle-stroke-width': 3, 'circle-stroke-color': '#fbbf24', 'circle-opacity': 1 }
     }, firstSymbolId);
 
-    map.current.addLayer({ id: 'retc-glow', type: 'circle', source: 'retc-source', paint: { 'circle-color': '#00ffff', 'circle-radius': 15, 'circle-opacity': 0.2, 'circle-blur': 0.6 } }, firstSymbolId);
-    map.current.addLayer({ id: 'retc-points', type: 'circle', source: 'retc-source', paint: { 'circle-color': '#e0f2fe', 'circle-radius': 5, 'circle-stroke-width': 2, 'circle-stroke-color': '#0ea5e9' } }, firstSymbolId);
+    map.current.addLayer({
+      id: 'retc-glow',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['!', ['has', 'point_count']],
+      paint: { 'circle-color': '#00ffff', 'circle-radius': 8, 'circle-opacity': 0.2, 'circle-blur': 0.6 }
+    }, firstSymbolId);
+
+    map.current.addLayer({
+      id: 'retc-points',
+      type: 'circle',
+      source: 'retc-source',
+      filter: ['!', ['has', 'point_count']],
+      paint: { 'circle-color': '#e0f2fe', 'circle-radius': 3, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#0ea5e9' }
+    }, firstSymbolId);
 
     if (latestProps.current.mapData) map.current.getSource('retc-source').setData(latestProps.current.mapData);
   }, []);
@@ -106,7 +174,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', 
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: [-70.6483, -33.4569],
       zoom: 10,
       attributionControl: false,
@@ -124,13 +192,29 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
 
     map.current.on('click', (e) => {
       const currentProps = latestProps.current;
+
+      // Primero verificar si se hizo clic en un cluster
+      const clusterFeatures = map.current.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+      if (clusterFeatures.length > 0) {
+        const clusterId = clusterFeatures[0].properties.cluster_id;
+        map.current.getSource('retc-source').getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err) return;
+          map.current.easeTo({
+            center: clusterFeatures[0].geometry.coordinates,
+            zoom: zoom + 0.5
+          });
+        });
+        return;
+      }
+
+      // Luego verificar puntos individuales
       const features = map.current.queryRenderedFeatures(e.point, { layers: ['retc-points-hitbox'] });
-      
+
       if (features.length > 0) {
         const f = features[0];
         const coords = f.geometry.coordinates.slice();
         let history = f.properties.history;
-        if (typeof history === 'string') { try { history = JSON.parse(history); } catch(e) {} }
+        if (typeof history === 'string') { try { history = JSON.parse(history); } catch (e) { } }
         setPopupInfo({ lngLat: coords, properties: f.properties, history });
         map.current.flyTo({ center: coords, speed: 0.5 });
         setIsScanMode(false);
@@ -142,6 +226,9 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       }
     });
 
+    // Cursor pointer para clusters y puntos
+    map.current.on('mouseenter', 'clusters', () => map.current.getCanvas().style.cursor = 'pointer');
+    map.current.on('mouseleave', 'clusters', () => updateCursorState(false));
     map.current.on('mouseenter', 'retc-points-hitbox', () => map.current.getCanvas().style.cursor = 'pointer');
     map.current.on('mouseleave', 'retc-points-hitbox', () => updateCursorState(false));
 
@@ -166,8 +253,8 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       const pointsWithin = turf.pointsWithinPolygon(dataGeoJSON, circleGeo);
       const idsToBlink = pointsWithin.features.map(f => f.properties.id_vu);
       if (map.current.getLayer('retc-pulse')) {
-         if (idsToBlink.length > 0) map.current.setFilter('retc-pulse', ['in', 'id_vu', ...idsToBlink]);
-         else map.current.setFilter('retc-pulse', ['in', 'id_vu', 'NonExistentID']);
+        if (idsToBlink.length > 0) map.current.setFilter('retc-pulse', ['in', 'id_vu', ...idsToBlink]);
+        else map.current.setFilter('retc-pulse', ['in', 'id_vu', 'NonExistentID']);
       }
 
       // Generar líneas
@@ -176,9 +263,9 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         features: pointsWithin.features.map(feature => {
           const dist = turf.distance(center, feature.geometry.coordinates, { units: 'kilometers' });
           const line = turf.lineString([center, feature.geometry.coordinates]);
-          
+
           line.properties = {
-            distLabel: `${dist.toFixed(2)} km` 
+            distLabel: `${dist.toFixed(2)} km`
           };
           return line;
         })
@@ -194,9 +281,9 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     if (!timestamp) timestamp = performance.now(); // Fix NaN
 
     if (map.current && map.current.getLayer('retc-pulse')) {
-      const opacity = (Math.sin(timestamp / 500) + 1) / 2 * 0.6 + 0.2; 
-      const radius = 15 + (Math.sin(timestamp / 500) * 3); 
-      
+      const opacity = (Math.sin(timestamp / 500) + 1) / 2 * 0.6 + 0.2;
+      const radius = 15 + (Math.sin(timestamp / 500) * 3);
+
       if (!isNaN(opacity) && !isNaN(radius)) {
         map.current.setPaintProperty('retc-pulse', 'circle-opacity', opacity);
         map.current.setPaintProperty('retc-pulse', 'circle-radius', radius);
@@ -213,7 +300,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
 
   useEffect(() => { if (isMapReady && mapData && map.current.getSource('retc-source')) { map.current.getSource('retc-source').setData(mapData); } }, [mapData, isMapReady]);
   useEffect(() => { if (isMapReady && currentLocation && radius) { updateMapAnalysisLogic(currentLocation.lng, currentLocation.lat, radius, mapData); } }, [radius, currentLocation, isMapReady, mapData]);
-  
+
   useEffect(() => {
     if (isMapReady && flyToLocation) {
       const { lng, lat } = flyToLocation;
@@ -231,7 +318,7 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
     setCurrentLocation({ lng, lat });
     if (marker.current) marker.current.setLngLat([lng, lat]);
     else marker.current = new maplibregl.Marker({ color: '#f43f5e' }).setLngLat([lng, lat]).addTo(map.current);
-    updateMapAnalysisLogic(lng, lat, radius || 3, mapData); 
+    updateMapAnalysisLogic(lng, lat, radius || 3, mapData);
     onLocationSelect({ lng, lat });
   };
   const closePopup = (e) => { e.stopPropagation(); setPopupInfo(null); };
@@ -239,10 +326,10 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
 
   return (
     <div ref={mapContainer} className="w-full h-screen absolute top-0 left-0">
-      <button 
-        onClick={toggleScanMode} 
+      <button
+        onClick={toggleScanMode}
         // 🔴 AQUÍ ESTÁ EL CAMBIO DE POSICIÓN: top-20 right-4
-        className={`absolute top-20 right-4 z-10 p-2.5 rounded-lg shadow-xl border transition-all duration-300 group ${isScanMode ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-slate-900/90 backdrop-blur border-slate-600 text-slate-400 hover:text-white hover:border-slate-500'}`} 
+        className={`absolute top-20 right-4 z-10 p-2.5 rounded-lg shadow-xl border transition-all duration-300 group ${isScanMode ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-slate-900/90 backdrop-blur border-slate-600 text-slate-400 hover:text-white hover:border-slate-500'}`}
         title="Activar modo análisis"
       >
         <ScanEye size={20} className={isScanMode ? 'animate-pulse' : ''} />
@@ -254,12 +341,12 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
             <div className="w-60 p-3 bg-slate-950/70 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50 pointer-events-auto relative transition-all animate-in fade-in zoom-in-95 slide-in-from-bottom-2">
               <button onClick={closePopup} className="absolute -top-2 -right-2 bg-slate-800 text-slate-400 hover:text-white hover:bg-rose-500 rounded-full p-1 border border-slate-700 shadow-lg transition-all"><X size={12} /></button>
               <div className="mb-1">
-                 <h3 className="font-bold text-slate-100 text-xs leading-tight mb-0.5 pr-2">{popupInfo.properties.name}</h3>
-                 <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-bold text-cyan-400 tracking-wide uppercase">{popupInfo.properties.category}</span>
+                <h3 className="font-bold text-slate-100 text-xs leading-tight mb-0.5 pr-2">{popupInfo.properties.name}</h3>
+                <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-bold text-cyan-400 tracking-wide uppercase">{popupInfo.properties.category}</span>
               </div>
               <div className="relative">
-                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                 <MiniChart history={popupInfo.history} color="#22d3ee" />
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                <MiniChart history={popupInfo.history} color="#22d3ee" />
               </div>
             </div>
             <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900/80 absolute left-1/2 -translate-x-1/2 bottom-[-6px] blur-[1px]"></div>
