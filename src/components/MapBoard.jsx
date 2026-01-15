@@ -328,13 +328,20 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
         else map.current.setFilter('retc-pulse', ['in', 'id_vu', 'NonExistentID']);
       }
 
-      // Generar líneas
+      // Calcular distancia y ordenar por cercanía
+      const pointsWithDistance = pointsWithin.features.map(feature => {
+        const dist = turf.distance(center, feature.geometry.coordinates, { units: 'kilometers' });
+        return { feature, dist };
+      }).sort((a, b) => a.dist - b.dist);
+
+      // SOLO TOP 5 MÁS CERCANAS para evitar saturación visual
+      const top5Nearest = pointsWithDistance.slice(0, 5);
+
+      // Generar líneas solo para las 5 más cercanas
       const connectionLines = {
         type: 'FeatureCollection',
-        features: pointsWithin.features.map(feature => {
-          const dist = turf.distance(center, feature.geometry.coordinates, { units: 'kilometers' });
+        features: top5Nearest.map(({ feature, dist }) => {
           const line = turf.lineString([center, feature.geometry.coordinates]);
-
           line.properties = {
             distLabel: `${dist.toFixed(2)} km`
           };
