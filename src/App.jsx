@@ -48,16 +48,7 @@ function App() {
     setIsExporting(true);
     setIsExportMenuOpen(false);
 
-    // 1. Resetear vista del mapa a vertical (pitch=0, bearing=0) para evitar distorsión
-    if (mapBoardRef.current?.resetViewForExport) {
-      await mapBoardRef.current.resetViewForExport();
-    }
-
-    // 1.5 NUEVO: Espera adicional para asegurar que el canvas esté completamente renderizado
-    // Crítico para dispositivos móviles más lentos
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 2. Capturar imagen del mapa actual
+    // Capturar imagen del mapa actual (ya está en vista cenital porque maxPitch: 0)
     const mapCanvas = document.querySelector('.maplibregl-canvas');
     if (mapCanvas) {
       setReportMapImage(mapCanvas.toDataURL('image/png'));
@@ -127,10 +118,6 @@ function App() {
       console.error(err);
       alert("Error al generar el reporte.");
     } finally {
-      // Restaurar vista original del mapa
-      if (mapBoardRef.current?.restoreView) {
-        mapBoardRef.current.restoreView();
-      }
       setReportMapImage(null);
       setIsExporting(false);
     }
