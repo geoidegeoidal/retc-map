@@ -20,7 +20,7 @@
 
 ## 🚀 Funcionalidades
 
-EcoMap Chile transforma datos oficiales de residuos industriales en una experiencia interactiva y comprensible.
+HuellaRETC transforma datos oficiales de residuos industriales en una experiencia interactiva y comprensible.
 
 ### 🗺️ Exploración Geoespacial
 * **Mapa Vectorial Dark Mode:** Renderizado de alto rendimiento con **MapLibre GL JS** v4.
