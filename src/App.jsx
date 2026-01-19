@@ -53,14 +53,26 @@ function App() {
       await mapBoardRef.current.resetViewForExport();
     }
 
-    // Capturar imagen del mapa actual (ya está en vista cenital porque maxPitch: 0)
+    // DEBUG: Verificar estado real del mapa antes de capturar
+    // Esto confirmará si el reset funcionó o si el móvil lo ignoró
+    if (mapBoardRef.current?.getMapInstance) {
+      const m = mapBoardRef.current.getMapInstance();
+      if (m) {
+        const p = m.getPitch().toFixed(2);
+        const b = m.getBearing().toFixed(2);
+        // Descomentar para debug en producción si es necesario
+        // alert(`DEBUG INFO:\nPitch: ${p} (Debe ser 0.00)\nBearing: ${b} (Debe ser 0.00)`);
+      }
+    }
+
+    // Capturar imagen del mapa actual
     const mapCanvas = document.querySelector('.maplibregl-canvas');
     if (mapCanvas) {
       setReportMapImage(mapCanvas.toDataURL('image/png'));
     }
 
     // Esperar a que React renderice el template con la imagen
-    await new Promise(resolve => setTimeout(resolve, 600));
+    await new Promise(resolve => setTimeout(resolve, 800)); // Aumentado a 800ms por seguridad
 
     const page1 = document.getElementById('printable-report');
     const page2 = document.getElementById('printable-report-page2');
@@ -84,40 +96,39 @@ function App() {
       }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const versionLabel = "v3_FIXED"; // Etiqueta para verificar versión descargada
 
       if (type === 'png') {
         // Descargar 2 archivos PNG separados
         const link1 = document.createElement('a');
-        link1.download = `HuellaRETC_Reporte_Pagina1_${timestamp}.png`;
+        link1.download = `HuellaRETC_Reporte_Pagina1_${versionLabel}_${timestamp}.png`;
         link1.href = canvas1.toDataURL('image/png');
         link1.click();
 
-        // Pequeña pausa para que el navegador procese la primera descarga
         if (canvas2) {
           await new Promise(resolve => setTimeout(resolve, 500));
           const link2 = document.createElement('a');
-          link2.download = `HuellaRETC_Reporte_Pagina2_${timestamp}.png`;
+          link2.download = `HuellaRETC_Reporte_Pagina2_${versionLabel}_${timestamp}.png`;
           link2.href = canvas2.toDataURL('image/png');
           link2.click();
         }
       } else if (type === 'pdf') {
-        // PDF multipágina en formato vertical (portrait)
+        // PDF multipágina
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'px',
           format: [canvas1.width / 2, canvas1.height / 2]
         });
 
-        // Página 1
         pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, 0, canvas1.width / 2, canvas1.height / 2);
 
-        // Página 2 (si existe)
         if (canvas2) {
           pdf.addPage([canvas2.width / 2, canvas2.height / 2], 'portrait');
           pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, canvas2.width / 2, canvas2.height / 2);
         }
 
-        pdf.save(`HuellaRETC_Reporte_${timestamp}.pdf`);
+        // Nombre de archivo con versión explícita
+        pdf.save(`HuellaRETC_Reporte_${versionLabel}_${timestamp}.pdf`);
       }
     } catch (err) {
       console.error(err);

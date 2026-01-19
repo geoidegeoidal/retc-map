@@ -11,6 +11,7 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
 
   // Exponer método simple para asegurar vista plana antes de exportar
   useImperativeHandle(ref, () => ({
+    getMapInstance: () => map.current,
     resetViewForExport: () => {
       if (!map.current) return Promise.resolve();
       return new Promise(resolve => {
