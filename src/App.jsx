@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import MapBoard from './components/MapBoard';
 import SearchBar from './components/SearchBar';
 import WelcomeModal from './components/WelcomeModal';
@@ -26,6 +26,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [reportMapImage, setReportMapImage] = useState(null);
+  const mapBoardRef = useRef(null);
 
   useEffect(() => {
     const baseUrl = import.meta.env.BASE_URL;
@@ -47,7 +48,12 @@ function App() {
     setIsExporting(true);
     setIsExportMenuOpen(false);
 
-    // 1. Capturar imagen del mapa actual
+    // 1. Resetear vista del mapa a vertical (pitch=0, bearing=0) para evitar distorsión
+    if (mapBoardRef.current?.resetViewForExport) {
+      await mapBoardRef.current.resetViewForExport();
+    }
+
+    // 2. Capturar imagen del mapa actual
     const mapCanvas = document.querySelector('.maplibregl-canvas');
     if (mapCanvas) {
       setReportMapImage(mapCanvas.toDataURL('image/png'));
@@ -84,6 +90,10 @@ function App() {
       console.error(err);
       alert("Error al generar el reporte.");
     } finally {
+      // Restaurar vista original del mapa
+      if (mapBoardRef.current?.restoreView) {
+        mapBoardRef.current.restoreView();
+      }
       setReportMapImage(null);
       setIsExporting(false);
     }
@@ -122,6 +132,7 @@ function App() {
       {isExporting && <div id="export-overlay" className="absolute inset-0 z-[60] bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center cursor-wait"><div className="animate-spin text-emerald-500 mb-4"><Download size={40} /></div><p className="text-xl font-bold text-white">Generando captura...</p></div>}
 
       <MapBoard
+        ref={mapBoardRef}
         mapData={geoData}
         onLocationSelect={handleMapClick}
         flyToLocation={targetLocation}

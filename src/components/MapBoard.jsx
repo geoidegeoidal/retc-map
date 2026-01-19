@@ -1,11 +1,44 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as turf from '@turf/turf';
 import MiniChart from './MiniChart';
 import { X, ScanEye } from 'lucide-react';
 
-export default function MapBoard({ mapData, onLocationSelect, flyToLocation, radius, highlightedName, highlightedIds }) {
+const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyToLocation, radius, highlightedName, highlightedIds }, ref) {
+  // Exponer métodos para control externo del mapa (para exportación)
+  const savedViewRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    // Resetear vista a vertical (pitch=0, bearing=0) antes de exportar
+    resetViewForExport: () => {
+      if (!map.current) return Promise.resolve();
+
+      // Guardar vista actual
+      savedViewRef.current = {
+        pitch: map.current.getPitch(),
+        bearing: map.current.getBearing()
+      };
+
+      // Resetear a vista vertical
+      map.current.setPitch(0);
+      map.current.setBearing(0);
+
+      // Esperar a que el mapa termine de renderizar
+      return new Promise(resolve => {
+        map.current.once('idle', resolve);
+        // Fallback timeout por si el evento no se dispara
+        setTimeout(resolve, 300);
+      });
+    },
+    // Restaurar vista original después de exportar
+    restoreView: () => {
+      if (!map.current || !savedViewRef.current) return;
+      map.current.setPitch(savedViewRef.current.pitch);
+      map.current.setBearing(savedViewRef.current.bearing);
+      savedViewRef.current = null;
+    }
+  }), []);
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -615,4 +648,6 @@ export default function MapBoard({ mapData, onLocationSelect, flyToLocation, rad
       )}
     </div>
   );
-}
+});
+
+export default MapBoard;
