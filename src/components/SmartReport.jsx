@@ -17,23 +17,23 @@ export default function SmartReport({ analysis }) {
 
     if (count === 0) {
       title = "Sin actividad industrial";
-      description = "No se detectan fuentes emisoras registradas en el radio seleccionado. El aire está libre de emisiones fijas directas reportadas.";
+      description = "No se detectan generadores de residuos registrados en el radio seleccionado.";
       tone = "success";
       Icon = Sparkles;
     } else {
       if (isHighTrend) {
-        title = "Alerta: Emisiones en alza";
-        description = `Zona con ${count} industrias. Se registra un aumento preocupante del ${trend.toFixed(1)}% en emisiones los últimos 5 años. ${industryText}`;
+        title = "Alerta: Residuos en alza";
+        description = `Zona con ${count} industrias. Se registra un aumento del ${trend.toFixed(1)}% en generación de residuos los últimos años. ${industryText}`;
         tone = "warning";
         Icon = TrendingUp;
       } else if (isNegativeTrend) {
-        title = "Mejora: Emisiones a la baja";
-        description = `Zona con ${count} industrias, pero con tendencia positiva: las emisiones han caído un ${Math.abs(trend).toFixed(1)}% recientemente. ${industryText}`;
+        title = "Mejora: Residuos a la baja";
+        description = `Zona con ${count} industrias, pero con tendencia positiva: la generación ha caído un ${Math.abs(trend).toFixed(1)}% recientemente. ${industryText}`;
         tone = "success";
         Icon = TrendingDown;
       } else {
         title = "Actividad estable";
-        description = `Zona con actividad moderada (${count} industrias). Las emisiones se mantienen estables (${trend > 0 ? '+' : ''}${trend.toFixed(1)}%) en el periodo. ${industryText}`;
+        description = `Zona con actividad moderada (${count} industrias). La generación de residuos se mantiene estable (${trend > 0 ? '+' : ''}${trend.toFixed(1)}%) en el periodo. ${industryText}`;
         tone = "neutral";
         Icon = Minus;
       }
