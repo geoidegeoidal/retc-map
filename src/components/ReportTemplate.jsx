@@ -122,15 +122,16 @@ export default function ReportTemplate({ analysis, mapSnapshot, isMobile = false
 
                         {/* SECCIÓN 2: Principales Rubros Industriales */}
                         <div className="border-t border-slate-200 pt-3 mb-3">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2 flex items-center gap-1">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-1 flex items-center gap-1">
                                 <Factory size={12} className="text-cyan-500" />
                                 Principales Rubros
                             </p>
-                            <div className="space-y-1.5">
+                            <p className="text-[8px] text-slate-400 mb-2">Número de industrias por categoría</p>
+                            <div className="space-y-2">
                                 {(stats.topCategories || []).slice(0, 4).map((cat, i) => (
-                                    <div key={i} className="flex items-center gap-2">
-                                        <div className="flex-1 text-[11px] text-slate-700 font-medium truncate">{cat.name}</div>
-                                        <div className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded text-[10px] font-bold">{cat.count}</div>
+                                    <div key={i} className="flex items-start gap-2">
+                                        <div className="flex-1 text-[10px] text-slate-700 font-medium leading-tight break-words">{cat.name}</div>
+                                        <div className="w-10 text-center px-1 py-0.5 bg-cyan-100 text-cyan-700 rounded text-[10px] font-bold shrink-0">{cat.count}</div>
                                     </div>
                                 ))}
                             </div>
@@ -138,14 +139,15 @@ export default function ReportTemplate({ analysis, mapSnapshot, isMobile = false
 
                         {/* SECCIÓN 3: Principales Tipos de Residuos (LER) */}
                         <div className="border-t border-slate-200 pt-3">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2 flex items-center gap-1">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-1 flex items-center gap-1">
                                 🗑️ Principales Residuos Generados
                             </p>
-                            <div className="space-y-1.5">
+                            <p className="text-[8px] text-slate-400 mb-2">Número de industrias que generan cada tipo</p>
+                            <div className="space-y-2">
                                 {(stats.topResidues || []).slice(0, 4).map((res, i) => (
-                                    <div key={i} className="flex items-center gap-2">
-                                        <div className="flex-1 text-[10px] text-slate-600 leading-tight">{res.name}</div>
-                                        <div className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px] font-bold shrink-0">{res.count}</div>
+                                    <div key={i} className="flex items-start gap-2">
+                                        <div className="flex-1 text-[9px] text-slate-600 leading-tight break-words">{res.name}</div>
+                                        <div className="w-10 text-center px-1 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px] font-bold shrink-0">{res.count}</div>
                                     </div>
                                 ))}
                             </div>
