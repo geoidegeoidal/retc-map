@@ -318,7 +318,10 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
       zoom: 12,
       attributionControl: false,
       doubleClickZoom: true,
-      preserveDrawingBuffer: true // Fix para html2canvas (Pantalla negra)
+      preserveDrawingBuffer: true, // Fix para html2canvas (Pantalla negra)
+      // Desactivar inclinación del mapa completamente
+      maxPitch: 0,
+      pitchWithRotate: false
     });
 
     map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
