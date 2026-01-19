@@ -101,9 +101,9 @@ function App() {
           link2.click();
         }
       } else if (type === 'pdf') {
-        // PDF multipágina en formato apaisado
+        // PDF multipágina en formato vertical (portrait)
         const pdf = new jsPDF({
-          orientation: 'landscape',
+          orientation: 'portrait',
           unit: 'px',
           format: [canvas1.width / 2, canvas1.height / 2]
         });
@@ -113,7 +113,7 @@ function App() {
 
         // Página 2 (si existe)
         if (canvas2) {
-          pdf.addPage([canvas2.width / 2, canvas2.height / 2], 'landscape');
+          pdf.addPage([canvas2.width / 2, canvas2.height / 2], 'portrait');
           pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, canvas2.width / 2, canvas2.height / 2);
         }
 
