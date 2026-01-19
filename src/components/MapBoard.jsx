@@ -9,47 +9,8 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
   // Exponer métodos para control externo del mapa (para exportación)
   const savedViewRef = useRef(null);
 
-  useImperativeHandle(ref, () => ({
-    // Resetear vista a vertical (pitch=0, bearing=0) antes de exportar
-    resetViewForExport: () => {
-      if (!map.current) return Promise.resolve();
-
-      // Guardar vista actual
-      savedViewRef.current = {
-        pitch: map.current.getPitch(),
-        bearing: map.current.getBearing()
-      };
-
-      // Usar jumpTo para cambio instantáneo (más robusto que setPitch/setBearing)
-      map.current.jumpTo({
-        pitch: 0,
-        bearing: 0
-      });
-
-      // Forzar repintado del mapa múltiples veces para asegurar
-      map.current.triggerRepaint();
-
-      // Esperar a que el mapa termine de renderizar completamente
-      // Timeout más largo para móviles (1000ms)
-      return new Promise(resolve => {
-        const onIdle = () => {
-          map.current.off('idle', onIdle);
-          // Esperar un poco más después del idle para asegurar renderizado completo
-          setTimeout(resolve, 300);
-        };
-        map.current.on('idle', onIdle);
-        // Fallback timeout más largo para móviles
-        setTimeout(resolve, 1200);
-      });
-    },
-    // Restaurar vista original después de exportar
-    restoreView: () => {
-      if (!map.current || !savedViewRef.current) return;
-      map.current.setPitch(savedViewRef.current.pitch);
-      map.current.setBearing(savedViewRef.current.bearing);
-      savedViewRef.current = null;
-    }
-  }), []);
+  // Exponer métodos (actualmente ninguno necesario para exportación simple)
+  useImperativeHandle(ref, () => ({}), []);
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -321,7 +282,11 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
       preserveDrawingBuffer: true, // Fix para html2canvas (Pantalla negra)
       // Desactivar inclinación del mapa completamente
       maxPitch: 0,
-      pitchWithRotate: false
+      pitchWithRotate: false,
+      // Desactivar gestos táctiles de inclinación y rotación
+      touchPitch: false,
+      dragRotate: false,
+      touchZoomRotate: true // Permite zoom táctil pero la rotación está bloqueada por dragRotate/pitchWithRotate
     });
 
     map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
