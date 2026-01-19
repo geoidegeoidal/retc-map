@@ -6,7 +6,7 @@ export default function WelcomeModal({ isOpen, onClose, onStartTutorial }) {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Header */}
                 <div className="relative p-6 pb-4 border-b border-white/10 bg-gradient-to-r from-cyan-500/10 to-violet-500/10">
                     <button
@@ -20,7 +20,7 @@ export default function WelcomeModal({ isOpen, onClose, onStartTutorial }) {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[60vh] space-y-4">
+                <div className="p-6 overflow-y-auto flex-1 space-y-4">
                     {/* Contexto */}
                     <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4">
                         <p className="text-sm text-slate-300 leading-relaxed">
