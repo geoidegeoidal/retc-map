@@ -20,22 +20,26 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
         bearing: map.current.getBearing()
       };
 
-      // Resetear a vista cenital (vertical, sin ángulo)
-      map.current.setPitch(0);
-      map.current.setBearing(0);
+      // Usar jumpTo para cambio instantáneo (más robusto que setPitch/setBearing)
+      map.current.jumpTo({
+        pitch: 0,
+        bearing: 0
+      });
 
-      // Forzar repintado del mapa
+      // Forzar repintado del mapa múltiples veces para asegurar
       map.current.triggerRepaint();
 
       // Esperar a que el mapa termine de renderizar completamente
+      // Timeout más largo para móviles (1000ms)
       return new Promise(resolve => {
         const onIdle = () => {
           map.current.off('idle', onIdle);
-          resolve();
+          // Esperar un poco más después del idle para asegurar renderizado completo
+          setTimeout(resolve, 300);
         };
         map.current.on('idle', onIdle);
-        // Fallback timeout más largo para asegurar renderizado completo
-        setTimeout(resolve, 600);
+        // Fallback timeout más largo para móviles
+        setTimeout(resolve, 1200);
       });
     },
     // Restaurar vista original después de exportar
