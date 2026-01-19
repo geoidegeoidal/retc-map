@@ -664,6 +664,9 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
           </div>
         </div>
       )}
+      <div className="absolute bottom-1 right-1 pointer-events-none text-[8px] text-white/20 select-none">
+        v2.1 (No-Tilt Checked)
+      </div>
     </div>
   );
 });
