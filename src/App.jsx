@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import MapBoard from './components/MapBoard';
-import SearchBar from './components/SearchBar';
+import SearchBar from './components/Searchbar';
 import WelcomeModal from './components/WelcomeModal';
 import TutorialOverlay from './components/TutorialOverlay';
 import ReportTemplate from './components/ReportTemplate';
