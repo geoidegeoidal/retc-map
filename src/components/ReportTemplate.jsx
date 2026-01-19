@@ -31,7 +31,7 @@ export default function ReportTemplate({ id, analysis, mapSnapshot }) {
             <div className="flex justify-between items-end border-b-2 border-slate-200 pb-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-                        🌍 EcoMap Chile
+                        🌍 HuellaRETC
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">Informe de Análisis Territorial de Generación de Residuos</p>
                 </div>
@@ -117,7 +117,7 @@ export default function ReportTemplate({ id, analysis, mapSnapshot }) {
 
             {/* FOOTER */}
             <div className="border-t border-slate-200 pt-4 flex justify-between items-center text-xs text-slate-400">
-                <p>Generado automáticamente por EcoMap Chile</p>
+                <p>Generado automáticamente por HuellaRETC</p>
                 <p className="flex items-center gap-1">
                     <Database size={12} /> Fuente: Registro de Emisiones y Transferencia de Contaminantes (RETC)
                 </p>

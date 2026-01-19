@@ -77,14 +77,14 @@ function App() {
 
       if (type === 'png') {
         const link = document.createElement('a');
-        link.download = `EcoMap_Reporte_${timestamp}.png`;
+        link.download = `HuellaRETC_Reporte_${timestamp}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
       } else if (type === 'pdf') {
         // Formato apaisado
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2] });
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-        pdf.save(`EcoMap_Reporte_${timestamp}.pdf`);
+        pdf.save(`HuellaRETC_Reporte_${timestamp}.pdf`);
       }
     } catch (err) {
       console.error(err);

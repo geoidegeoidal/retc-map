@@ -15,7 +15,7 @@ export default function WelcomeModal({ isOpen, onClose, onStartTutorial }) {
                     >
                         <X size={20} />
                     </button>
-                    <h1 className="text-xl font-bold text-white mb-1">🌍 EcoMap Chile</h1>
+                    <h1 className="text-xl font-bold text-white mb-1">🌍 HuellaRETC</h1>
                     <p className="text-sm text-slate-400">Mapa de Generadores Industriales de Residuos</p>
                 </div>
 
@@ -32,15 +32,15 @@ export default function WelcomeModal({ isOpen, onClose, onStartTutorial }) {
 
                     {/* Funcionalidades */}
                     <div className="space-y-3">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider">Funcionalidades</h2>
-
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                            Bienvenido a HuellaRETC
+                        </h2>
                         <div className="flex gap-3 items-start">
                             <div className="p-2 bg-violet-500/20 rounded-lg shrink-0">
                                 <Calendar size={16} className="text-violet-400" />
                             </div>
                             <div>
                                 <p className="text-sm font-semibold text-white">Selector de Año</p>
-                                <p className="text-xs text-slate-400">Cambia entre 2021-2024 para ver la evolución temporal de cada establecimiento.</p>
                             </div>
                         </div>
 

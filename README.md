@@ -1,4 +1,4 @@
-# 🌍 EcoMap Chile: Monitor Ambiental Ciudadano
+# 🌍 HuellaRETC: Monitor Ambiental Ciudadano
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![License](https://img.shields.io/badge/License-MIT-blue)
@@ -13,7 +13,7 @@
 
 ## 📸 Vistazo Rápido
 
-![EcoMap Chile Dashboard](public/ecomap_dashboard.png)
+![HuellaRETC Dashboard](public/ecomap_dashboard.png)
 *Vista del mapa interactivo mostrando generadores industriales en la Región Metropolitana*
 
 ---
