@@ -21,6 +21,15 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
           setTimeout(resolve, 500);
         };
 
+        // APAGAR TODO LO QUE PUEDA CAUSAR PITCH
+        // Forzar límites en runtime (esto anula cualquier estado previo irreductible)
+        map.current.setMinPitch(0);
+        map.current.setMaxPitch(0);
+
+        // Deshabilitar handlers temporalmente
+        map.current.dragRotate.disable();
+        if (map.current.touchZoomRotate) map.current.touchZoomRotate.disableRotation();
+
         // Suscribirse a UN solo evento idle
         map.current.once('idle', onIdle);
 
@@ -29,14 +38,12 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
         map.current.easeTo({
           pitch: 0,
           bearing: 0,
-          zoom: map.current.getZoom() + 0.001, // Cambio infinitesimal para forzar recálculo
-          duration: 400, // Duración suficiente para que el driver gráfico despierte
+          zoom: map.current.getZoom() + 0.0001, // Cambio infinitesimal para forzar recálculo
+          duration: 300, // Duración suficiente para que el driver gráfico despierte
           easing: t => t // Lineal
         });
 
-        // Si el mapa ya estaba idle y jumpTo no provoca cambios (ya estaba en 0,0),
-        // el evento idle podría no dispararse o dispararse inmediatamente.
-        // Forzamos un repaint para asegurar.
+        // Si el mapa ya estaba idle...
         map.current.triggerRepaint();
 
         // Fallback de seguridad por si el evento idle nunca llega (ej: tiles cargando infinito)
