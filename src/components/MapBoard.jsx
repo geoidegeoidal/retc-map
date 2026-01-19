@@ -24,11 +24,14 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
         // Suscribirse a UN solo evento idle
         map.current.once('idle', onIdle);
 
-        // Forzar vista cenital instantánea (duration: 0 es clave)
-        map.current.jumpTo({
+        // Forzar vista animada (easeTo vs jumpTo) para obligar al GPU a renderizar frames intermedios
+        // Esto invalida el caché del buffer visual en móviles
+        map.current.easeTo({
           pitch: 0,
           bearing: 0,
-          duration: 0
+          zoom: map.current.getZoom() + 0.001, // Cambio infinitesimal para forzar recálculo
+          duration: 400, // Duración suficiente para que el driver gráfico despierte
+          easing: t => t // Lineal
         });
 
         // Si el mapa ya estaba idle y jumpTo no provoca cambios (ya estaba en 0,0),
