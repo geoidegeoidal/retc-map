@@ -642,7 +642,12 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
               <button onClick={closePopup} className="absolute -top-2 -right-2 bg-slate-800 text-slate-400 hover:text-white hover:bg-rose-500 rounded-full p-1 border border-slate-700 shadow-lg transition-all"><X size={12} /></button>
               <div className="mb-1">
                 <h3 className="font-bold text-slate-100 text-xs leading-tight mb-0.5 pr-2">{popupInfo.properties.name}</h3>
-                <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-bold text-cyan-400 tracking-wide uppercase">{popupInfo.properties.category}</span>
+                <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-bold text-cyan-400 tracking-wide uppercase mb-1">{popupInfo.properties.category}</span>
+                {/* Lista de Residuos */}
+                <div className="mt-1 mb-1 p-1 bg-black/20 rounded border border-white/5 text-[8px] text-slate-300 font-medium leading-tight max-h-[40px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                  <span className="text-slate-500 mr-1">Residuos:</span>
+                  {popupInfo.properties.residues || "Sin detalle"}
+                </div>
               </div>
               <div className="relative">
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>

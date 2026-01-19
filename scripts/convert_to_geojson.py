@@ -36,6 +36,20 @@ def main():
     years = sorted(grouped['año'].unique())
     print(f"   Años disponibles: {years}")
     
+    # Detectar columna de residuo (nombre_residuo, descripcion_residuo, etc.)
+    residue_col = next((col for col in df.columns if 'nombre_residuo' in col.lower() or 'residuo' in col.lower()), None)
+    residues_map = {}
+    
+    if residue_col:
+        print(f"   🧪 Columna de residuos detectada: {residue_col}")
+        # Agrupar residuos únicos por establecimiento (concatenados por comas)
+        # Convertimos a set para únicos, eliminamos nulos, ordena alfabéticamente
+        residues_map = df.groupby('id_vu')[residue_col].apply(
+            lambda x: ", ".join(sorted({str(val) for val in x if pd.notna(val) and str(val).strip() != ""}))
+        ).to_dict()
+    else:
+        print("   ⚠️ No se detectó columna de nombre de residuo.")
+
     # Crear features GeoJSON
     features = []
     establishments = grouped['id_vu'].unique()
@@ -68,7 +82,8 @@ def main():
             "region": str(first_row['region']),
             "total_tonnage": round(total_tonnage, 2),
             **year_tonnages,  # Agregar tonnage_2021, tonnage_2022, tonnage_2023, tonnage_2024
-            "history": history
+            "history": history,
+            "residues": residues_map.get(id_vu, "No informado")
         }
         
         feature = {
