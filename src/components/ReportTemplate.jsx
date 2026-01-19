@@ -2,7 +2,7 @@ import React from 'react';
 import { Layers, MapPin, Database, TrendingUp, TrendingDown, BarChart2, Activity, Factory } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, Cell } from 'recharts';
 
-export default function ReportTemplate({ analysis, mapSnapshot }) {
+export default function ReportTemplate({ analysis, mapSnapshot, isMobile = false }) {
     if (!analysis) return null;
 
     const date = new Date().toLocaleDateString('es-CL', {
@@ -81,20 +81,81 @@ export default function ReportTemplate({ analysis, mapSnapshot }) {
                     </div>
                 </div>
 
-                {/* MAP SNAPSHOT */}
-                <div className="w-full h-[320px] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 mb-5 relative">
-                    {mapSnapshot ? (
-                        <img src={mapSnapshot} alt="Mapa del sector" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400">Capturando mapa...</div>
-                    )}
-                    <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
-                            <MapPin size={12} className="text-rose-500" />
-                            <span>Zona de Análisis ({stats.radius} km)</span>
+                {/* MAP SNAPSHOT O CONTENIDO ALTERNATIVO MÓVIL */}
+                {!isMobile ? (
+                    <div className="w-full h-[320px] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 mb-5 relative">
+                        {mapSnapshot ? (
+                            <img src={mapSnapshot} alt="Mapa del sector" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">Capturando mapa...</div>
+                        )}
+                        <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                                <MapPin size={12} className="text-rose-500" />
+                                <span>Zona de Análisis ({stats.radius} km)</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    /* CONTENIDO ALTERNATIVO PARA MÓVIL: Distribución por Categoría + Ranking Visual */
+                    <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 mb-5 p-4">
+                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <Factory size={16} className="text-cyan-500" />
+                            Distribución por Categoría Industrial
+                        </h3>
+
+                        {/* Calcular distribución por categoría */}
+                        {(() => {
+                            const categoryData = {};
+                            if (stats.topEmitters) {
+                                stats.topEmitters.forEach(e => {
+                                    const cat = e.category || 'Sin clasificar';
+                                    categoryData[cat] = (categoryData[cat] || 0) + 1;
+                                });
+                            }
+                            const sortedCategories = Object.entries(categoryData)
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 5);
+                            const maxCount = sortedCategories[0]?.[1] || 1;
+
+                            return (
+                                <div className="space-y-2 mb-4">
+                                    {sortedCategories.map(([cat, count], i) => (
+                                        <div key={cat} className="flex items-center gap-2">
+                                            <div className="w-24 text-[10px] text-slate-600 truncate font-medium">{cat}</div>
+                                            <div className="flex-1 h-4 bg-slate-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full"
+                                                    style={{
+                                                        width: `${(count / maxCount) * 100}%`,
+                                                        backgroundColor: ['#06b6d4', '#8b5cf6', '#ec4899', '#f97316', '#10b981'][i]
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="w-8 text-[10px] text-slate-500 text-right font-bold">{count}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+
+                        {/* Mini Ranking Visual */}
+                        <div className="border-t border-slate-200 pt-3">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">Top 3 Generadores (Toneladas)</p>
+                            <div className="flex gap-2">
+                                {companyStats.slice(0, 3).map((c, i) => (
+                                    <div key={i} className="flex-1 bg-white rounded-lg p-2 border border-slate-200 text-center">
+                                        <div className="text-lg font-black" style={{ color: ['#06b6d4', '#8b5cf6', '#ec4899'][i] }}>
+                                            #{i + 1}
+                                        </div>
+                                        <div className="text-[9px] text-slate-600 truncate font-medium">{c.name}</div>
+                                        <div className="text-xs font-bold text-slate-800">{Math.round(c.total).toLocaleString('es-CL')} t</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* SUMMARY */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-5">

@@ -26,7 +26,16 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [reportMapImage, setReportMapImage] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const mapBoardRef = useRef(null);
+
+  // Detectar si es dispositivo móvil (ancho < 768px)
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const baseUrl = import.meta.env.BASE_URL;
@@ -152,6 +161,7 @@ function App() {
           id="printable-report"
           analysis={analysis}
           mapSnapshot={reportMapImage}
+          isMobile={isMobile}
         />
       </div>
 
