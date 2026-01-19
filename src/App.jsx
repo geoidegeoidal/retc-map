@@ -60,30 +60,54 @@ function App() {
     }
 
     // Esperar a que React renderice el template con la imagen
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 600));
 
-    const element = document.getElementById('printable-report');
-    if (!element) { setIsExporting(false); return; }
+    const page1 = document.getElementById('printable-report');
+    const page2 = document.getElementById('printable-report-page2');
+    if (!page1) { setIsExporting(false); return; }
 
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2, // Mejor calidad
+      const html2canvasOptions = {
+        scale: 2,
         backgroundColor: '#ffffff',
         logging: false,
         useCORS: true
-      });
+      };
+
+      // Capturar página 1
+      const canvas1 = await html2canvas(page1, html2canvasOptions);
+
+      // Capturar página 2 (si existe)
+      let canvas2 = null;
+      if (page2) {
+        canvas2 = await html2canvas(page2, html2canvasOptions);
+      }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
       if (type === 'png') {
+        // Para PNG, solo exportamos la página 1 o combinamos verticalmente
         const link = document.createElement('a');
         link.download = `HuellaRETC_Reporte_${timestamp}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas1.toDataURL('image/png');
         link.click();
       } else if (type === 'pdf') {
-        // Formato apaisado
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2] });
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+        // PDF multipágina en formato apaisado
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: [canvas1.width / 2, canvas1.height / 2]
+        });
+
+        // Página 1
+        pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, 0, canvas1.width / 2, canvas1.height / 2);
+
+        // Página 2 (si existe)
+        if (canvas2) {
+          pdf.addPage([canvas2.width / 2, canvas2.height / 2], 'landscape');
+          pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, 0, canvas2.width / 2, canvas2.height / 2);
+        }
+
         pdf.save(`HuellaRETC_Reporte_${timestamp}.pdf`);
       }
     } catch (err) {
