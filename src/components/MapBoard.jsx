@@ -9,8 +9,17 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
   // Exponer métodos para control externo del mapa (para exportación)
   const savedViewRef = useRef(null);
 
-  // Exponer métodos (actualmente ninguno necesario para exportación simple)
-  useImperativeHandle(ref, () => ({}), []);
+  // Exponer método simple para asegurar vista plana antes de exportar
+  useImperativeHandle(ref, () => ({
+    resetViewForExport: () => {
+      if (!map.current) return Promise.resolve();
+      // Forzar instantáneamente vista cenital y norte-sur
+      map.current.jumpTo({ pitch: 0, bearing: 0 });
+      map.current.triggerRepaint();
+      // Pequeña espera para asegurar renderizado
+      return new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }), []);
   const mapContainer = useRef(null);
   const map = useRef(null);
   const marker = useRef(null);
@@ -295,6 +304,8 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
       initializeLayers();
       setIsMapReady(true);
       animatePulse();
+      // CRÍTICO PARA MÓVIL: Desactivar rotación en gestos de dos dedos
+      if (map.current.touchZoomRotate) map.current.touchZoomRotate.disableRotation();
     });
 
     map.current.on('click', (e) => {

@@ -48,6 +48,11 @@ function App() {
     setIsExporting(true);
     setIsExportMenuOpen(false);
 
+    // 1. Asegurar vista plana (Norte-Sur, cenital)
+    if (mapBoardRef.current?.resetViewForExport) {
+      await mapBoardRef.current.resetViewForExport();
+    }
+
     // Capturar imagen del mapa actual (ya está en vista cenital porque maxPitch: 0)
     const mapCanvas = document.querySelector('.maplibregl-canvas');
     if (mapCanvas) {
