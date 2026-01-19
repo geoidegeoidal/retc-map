@@ -86,11 +86,20 @@ function App() {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
       if (type === 'png') {
-        // Para PNG, solo exportamos la página 1 o combinamos verticalmente
-        const link = document.createElement('a');
-        link.download = `HuellaRETC_Reporte_${timestamp}.png`;
-        link.href = canvas1.toDataURL('image/png');
-        link.click();
+        // Descargar 2 archivos PNG separados
+        const link1 = document.createElement('a');
+        link1.download = `HuellaRETC_Reporte_Pagina1_${timestamp}.png`;
+        link1.href = canvas1.toDataURL('image/png');
+        link1.click();
+
+        // Pequeña pausa para que el navegador procese la primera descarga
+        if (canvas2) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const link2 = document.createElement('a');
+          link2.download = `HuellaRETC_Reporte_Pagina2_${timestamp}.png`;
+          link2.href = canvas2.toDataURL('image/png');
+          link2.click();
+        }
       } else if (type === 'pdf') {
         // PDF multipágina en formato apaisado
         const pdf = new jsPDF({
