@@ -36,19 +36,27 @@ def main():
     years = sorted(grouped['año'].unique())
     print(f"   Años disponibles: {years}")
     
-    # Detectar columna de residuo (nombre_residuo, descripcion_residuo, etc.)
-    residue_col = next((col for col in df.columns if 'nombre_residuo' in col.lower() or 'residuo' in col.lower()), None)
+    # Mostrar columnas disponibles para debugging
+    print(f"   📋 Columnas disponibles: {list(df.columns)}")
+    
+    # Detectar columna de residuo (buscar varias opciones comunes incluyendo LER)
+    residue_col = None
+    for pattern in ['ler_subcapitulo', 'nombre_residuo', 'descripcion_residuo', 'desc_residuo', 'ler', 'nombre', 'residuo']:
+        match = next((col for col in df.columns if pattern in col.lower()), None)
+        if match:
+            residue_col = match
+            break
+    
     residues_map = {}
     
     if residue_col:
         print(f"   🧪 Columna de residuos detectada: {residue_col}")
-        # Agrupar residuos únicos por establecimiento (concatenados por comas)
-        # Convertimos a set para únicos, eliminamos nulos, ordena alfabéticamente
+        # Agrupar residuos únicos por establecimiento
         residues_map = df.groupby('id_vu')[residue_col].apply(
             lambda x: ", ".join(sorted({str(val) for val in x if pd.notna(val) and str(val).strip() != ""}))
         ).to_dict()
     else:
-        print("   ⚠️ No se detectó columna de nombre de residuo.")
+        print("   ⚠️ No se detectó columna de residuo. Revisa las columnas disponibles arriba.")
 
     # Crear features GeoJSON
     features = []
