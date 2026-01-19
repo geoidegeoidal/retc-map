@@ -53,6 +53,10 @@ function App() {
       await mapBoardRef.current.resetViewForExport();
     }
 
+    // 1.5 NUEVO: Espera adicional para asegurar que el canvas esté completamente renderizado
+    // Crítico para dispositivos móviles más lentos
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     // 2. Capturar imagen del mapa actual
     const mapCanvas = document.querySelector('.maplibregl-canvas');
     if (mapCanvas) {
