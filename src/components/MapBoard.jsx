@@ -13,11 +13,34 @@ const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyTo
   useImperativeHandle(ref, () => ({
     resetViewForExport: () => {
       if (!map.current) return Promise.resolve();
-      // Forzar instantáneamente vista cenital y norte-sur
-      map.current.jumpTo({ pitch: 0, bearing: 0 });
-      map.current.triggerRepaint();
-      // Pequeña espera para asegurar renderizado
-      return new Promise(resolve => setTimeout(resolve, 300));
+      return new Promise(resolve => {
+        // Callback cuando el mapa esté totalmente quieto y cargado
+        const onIdle = () => {
+          // Pequeña espera extra de seguridad para el buffer gráfico móvil
+          setTimeout(resolve, 500);
+        };
+
+        // Suscribirse a UN solo evento idle
+        map.current.once('idle', onIdle);
+
+        // Forzar vista cenital instantánea (duration: 0 es clave)
+        map.current.jumpTo({
+          pitch: 0,
+          bearing: 0,
+          duration: 0
+        });
+
+        // Si el mapa ya estaba idle y jumpTo no provoca cambios (ya estaba en 0,0),
+        // el evento idle podría no dispararse o dispararse inmediatamente.
+        // Forzamos un repaint para asegurar.
+        map.current.triggerRepaint();
+
+        // Fallback de seguridad por si el evento idle nunca llega (ej: tiles cargando infinito)
+        setTimeout(() => {
+          map.current.off('idle', onIdle);
+          resolve();
+        }, 3000);
+      });
     }
   }), []);
   const mapContainer = useRef(null);
