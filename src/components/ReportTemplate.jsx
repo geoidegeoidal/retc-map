@@ -241,8 +241,8 @@ export default function ReportTemplate({ analysis, mapSnapshot }) {
                         </div>
                         <div className="bg-white/10 rounded-lg p-3">
                             <p className="text-violet-300 font-semibold mb-1">Concentración Top 5</p>
-                            <p className="text-white/90">{totalTonnage > 0 ? ((companyStats.slice(0, 5).reduce((a, c) => a + c.total, 0) / totalTonnage) * 100).toFixed(0) : 0}%</p>
-                            <p className="text-[10px] text-white/60 mt-1">del total de la zona</p>
+                            <p className="text-white/90">{stats.regionalTotal > 0 ? ((stats.top5Total / stats.regionalTotal) * 100).toFixed(1) : 0}%</p>
+                            <p className="text-[10px] text-white/60 mt-1">del total de {stats.regionalName || 'la región'}</p>
                         </div>
                         <div className="bg-white/10 rounded-lg p-3">
                             <p className={`${stats.trend > 0 ? 'text-rose-300' : 'text-emerald-300'} font-semibold mb-1`}>Proyección</p>

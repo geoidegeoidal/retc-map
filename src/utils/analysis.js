@@ -51,15 +51,40 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
   let trend = 0;
   if (total2021 > 0) trend = ((total2024 - total2021) / total2021) * 100;
 
+  // 6. NUEVO: Calcular total REGIONAL para el insight de Concentración
+  // Usamos la región de la industria más cercana como referencia
+  const nearestIndustry = enrichedFeatures.sort((a, b) => a.properties.distance - b.properties.distance)[0];
+  const targetRegion = nearestIndustry?.properties?.region || null;
+
+  // Sumar todas las toneladas de esa región (de todos los años)
+  let regionalTotal = 0;
+  let regionalName = targetRegion;
+  if (targetRegion) {
+    geoData.features.forEach(f => {
+      if (f.properties.region === targetRegion) {
+        const total = f.properties.history?.reduce((sum, h) => sum + h.value, 0) || 0;
+        regionalTotal += total;
+      }
+    });
+  }
+
+  // Calcular total del Top 5 de la zona
+  const top5Total = topEmitters.reduce((acc, f) => {
+    return acc + f.properties.history.reduce((sum, h) => sum + h.value, 0);
+  }, 0);
+
   return {
     stats: {
       count: featuresInRadius.length,
       trend: trend,
-      radius: radiusInKm
+      radius: radiusInKm,
+      regionalTotal: regionalTotal,
+      regionalName: regionalName,
+      top5Total: top5Total
     },
     chartData: chartData,
-    lineKeys: lineKeys, // <--- ESTO ES NUEVO: Le dice al gráfico qué lineas dibujar
-    nearest: enrichedFeatures.sort((a, b) => a.properties.distance - b.properties.distance)[0],
-    topIds: topEmitters.map(f => f.properties.id_vu) // NUEVO: IDs para resaltar en el mapa
+    lineKeys: lineKeys,
+    nearest: nearestIndustry,
+    topIds: topEmitters.map(f => f.properties.id_vu)
   };
 };
