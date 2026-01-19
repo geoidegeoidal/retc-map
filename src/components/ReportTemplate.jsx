@@ -97,61 +97,59 @@ export default function ReportTemplate({ analysis, mapSnapshot, isMobile = false
                         </div>
                     </div>
                 ) : (
-                    /* CONTENIDO ALTERNATIVO PARA MÓVIL: Distribución por Categoría + Ranking Visual */
+                    /* CONTENIDO ALTERNATIVO PARA MÓVIL: Contexto Regional + Top 3 con Tendencias */
                     <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 mb-5 p-4">
-                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                            <Factory size={16} className="text-cyan-500" />
-                            Distribución por Categoría Industrial
-                        </h3>
 
-                        {/* Calcular distribución por categoría */}
-                        {(() => {
-                            const categoryData = {};
-                            if (stats.topEmitters) {
-                                stats.topEmitters.forEach(e => {
-                                    const cat = e.category || 'Sin clasificar';
-                                    categoryData[cat] = (categoryData[cat] || 0) + 1;
-                                });
-                            }
-                            const sortedCategories = Object.entries(categoryData)
-                                .sort((a, b) => b[1] - a[1])
-                                .slice(0, 5);
-                            const maxCount = sortedCategories[0]?.[1] || 1;
+                        {/* SECCIÓN 1: Contexto Regional */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="bg-white rounded-lg p-3 border border-slate-200">
+                                <p className="text-[10px] text-slate-500 uppercase font-bold">Peso en la Región</p>
+                                <p className="text-xl font-black text-cyan-600">
+                                    {stats.regionalTotal > 0
+                                        ? ((totalTonnage / stats.regionalTotal) * 100).toFixed(1)
+                                        : '—'}%
+                                </p>
+                                <p className="text-[9px] text-slate-400">del total de {stats.regionalName || 'la región'}</p>
+                            </div>
+                            <div className="bg-white rounded-lg p-3 border border-slate-200">
+                                <p className="text-[10px] text-slate-500 uppercase font-bold">Densidad</p>
+                                <p className="text-xl font-black text-violet-600">
+                                    {(stats.count / (Math.PI * Math.pow(stats.radius, 2))).toFixed(1)}
+                                </p>
+                                <p className="text-[9px] text-slate-400">industrias por km²</p>
+                            </div>
+                        </div>
 
-                            return (
-                                <div className="space-y-2 mb-4">
-                                    {sortedCategories.map(([cat, count], i) => (
-                                        <div key={cat} className="flex items-center gap-2">
-                                            <div className="w-24 text-[10px] text-slate-600 truncate font-medium">{cat}</div>
-                                            <div className="flex-1 h-4 bg-slate-200 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full rounded-full"
-                                                    style={{
-                                                        width: `${(count / maxCount) * 100}%`,
-                                                        backgroundColor: ['#06b6d4', '#8b5cf6', '#ec4899', '#f97316', '#10b981'][i]
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="w-8 text-[10px] text-slate-500 text-right font-bold">{count}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })()}
-
-                        {/* Mini Ranking Visual */}
+                        {/* SECCIÓN 2: Top 3 Generadores con Tendencias */}
                         <div className="border-t border-slate-200 pt-3">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">Top 3 Generadores (Toneladas)</p>
-                            <div className="flex gap-2">
-                                {companyStats.slice(0, 3).map((c, i) => (
-                                    <div key={i} className="flex-1 bg-white rounded-lg p-2 border border-slate-200 text-center">
-                                        <div className="text-lg font-black" style={{ color: ['#06b6d4', '#8b5cf6', '#ec4899'][i] }}>
-                                            #{i + 1}
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">Top 3 Generadores</p>
+                            <div className="space-y-2">
+                                {companyStats.slice(0, 3).map((c, i) => {
+                                    // Calcular tendencia individual (si hay historia)
+                                    const history = chartData.map(y => y[c.name] || 0);
+                                    const first = history[0] || 0;
+                                    const last = history[history.length - 1] || 0;
+                                    const trend = first > 0 ? ((last - first) / first) * 100 : 0;
+
+                                    return (
+                                        <div key={i} className="flex items-center gap-2 bg-white rounded-lg p-2 border border-slate-200">
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm"
+                                                style={{ backgroundColor: ['#06b6d4', '#8b5cf6', '#ec4899'][i] }}>
+                                                {i + 1}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-slate-800 truncate">{c.name}</p>
+                                                <p className="text-[10px] text-slate-500">{Math.round(c.total).toLocaleString('es-CL')} t acumuladas</p>
+                                            </div>
+                                            <div className={`text-right px-2 py-1 rounded ${trend > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                <p className="text-xs font-bold flex items-center gap-1">
+                                                    {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                                    {Math.abs(trend).toFixed(0)}%
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="text-[9px] text-slate-600 truncate font-medium">{c.name}</div>
-                                        <div className="text-xs font-bold text-slate-800">{Math.round(c.total).toLocaleString('es-CL')} t</div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
