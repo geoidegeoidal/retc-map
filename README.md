@@ -44,8 +44,9 @@ EcoMap Chile transforma datos oficiales de residuos industriales en una experien
 * **Mini-Charts en Popups:** Gráficos sparkline al hacer clic en una industria.
 
 ### 🖨️ Exportación Profesional
-* **Exportar a PNG:** Captura de alta resolución del mapa y panel de análisis.
+* **Exportar a PNG:** Captura de alta resolución del reporte de análisis.
 * **Exportar a PDF:** Informes completos con métricas, mapa, tabla de Top 5 y tendencias.
+* **Vista Cenital Automática:** Los mapas se exportan siempre en vista desde arriba (pitch=0°), sin inclinación, para máxima legibilidad en reportes impresos.
 
 ### 🎓 Onboarding Interactivo
 * **Modal de Bienvenida:** Introducción a funcionalidades con leyenda de colores.
