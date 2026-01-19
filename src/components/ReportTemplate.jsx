@@ -120,36 +120,34 @@ export default function ReportTemplate({ analysis, mapSnapshot, isMobile = false
                             </div>
                         </div>
 
-                        {/* SECCIÓN 2: Top 3 Generadores con Tendencias */}
-                        <div className="border-t border-slate-200 pt-3">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">Top 3 Generadores</p>
-                            <div className="space-y-2">
-                                {companyStats.slice(0, 3).map((c, i) => {
-                                    // Calcular tendencia individual (si hay historia)
-                                    const history = chartData.map(y => y[c.name] || 0);
-                                    const first = history[0] || 0;
-                                    const last = history[history.length - 1] || 0;
-                                    const trend = first > 0 ? ((last - first) / first) * 100 : 0;
+                        {/* SECCIÓN 2: Principales Rubros Industriales */}
+                        <div className="border-t border-slate-200 pt-3 mb-3">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2 flex items-center gap-1">
+                                <Factory size={12} className="text-cyan-500" />
+                                Principales Rubros
+                            </p>
+                            <div className="space-y-1.5">
+                                {(stats.topCategories || []).slice(0, 4).map((cat, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <div className="flex-1 text-[11px] text-slate-700 font-medium truncate">{cat.name}</div>
+                                        <div className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded text-[10px] font-bold">{cat.count}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                                    return (
-                                        <div key={i} className="flex items-center gap-2 bg-white rounded-lg p-2 border border-slate-200">
-                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm"
-                                                style={{ backgroundColor: ['#06b6d4', '#8b5cf6', '#ec4899'][i] }}>
-                                                {i + 1}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-slate-800 truncate">{c.name}</p>
-                                                <p className="text-[10px] text-slate-500">{Math.round(c.total).toLocaleString('es-CL')} t acumuladas</p>
-                                            </div>
-                                            <div className={`text-right px-2 py-1 rounded ${trend > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                                <p className="text-xs font-bold flex items-center gap-1">
-                                                    {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                                                    {Math.abs(trend).toFixed(0)}%
-                                                </p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                        {/* SECCIÓN 3: Principales Tipos de Residuos (LER) */}
+                        <div className="border-t border-slate-200 pt-3">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-2 flex items-center gap-1">
+                                🗑️ Principales Residuos Generados
+                            </p>
+                            <div className="space-y-1.5">
+                                {(stats.topResidues || []).slice(0, 4).map((res, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <div className="flex-1 text-[10px] text-slate-600 leading-tight">{res.name}</div>
+                                        <div className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px] font-bold shrink-0">{res.count}</div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

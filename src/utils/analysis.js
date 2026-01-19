@@ -73,6 +73,34 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
     return acc + f.properties.history.reduce((sum, h) => sum + h.value, 0);
   }, 0);
 
+  // 7. NUEVO: Distribución por RUBROS (categorías industriales)
+  const categoryCount = {};
+  featuresInRadius.forEach(f => {
+    const cat = f.properties.category || 'Sin clasificar';
+    categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+  });
+  const topCategories = Object.entries(categoryCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  // 8. NUEVO: Principales TIPOS DE RESIDUOS (LER)
+  const residueCount = {};
+  featuresInRadius.forEach(f => {
+    const residuesStr = f.properties.residues || '';
+    // Los residuos pueden venir separados por comas o punto y coma
+    const residueList = residuesStr.split(/[,;]/).map(r => r.trim()).filter(r => r.length > 0);
+    residueList.forEach(res => {
+      // Tomar solo los primeros 40 caracteres para evitar textos muy largos
+      const shortRes = res.length > 40 ? res.substring(0, 37) + '...' : res;
+      residueCount[shortRes] = (residueCount[shortRes] || 0) + 1;
+    });
+  });
+  const topResidues = Object.entries(residueCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
   return {
     stats: {
       count: featuresInRadius.length,
@@ -80,7 +108,9 @@ export const analyzeLocation = (userLocation, geoData, radiusInKm = 3) => {
       radius: radiusInKm,
       regionalTotal: regionalTotal,
       regionalName: regionalName,
-      top5Total: top5Total
+      top5Total: top5Total,
+      topCategories: topCategories,
+      topResidues: topResidues
     },
     chartData: chartData,
     lineKeys: lineKeys,
