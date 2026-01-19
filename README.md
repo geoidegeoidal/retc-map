@@ -44,9 +44,17 @@ HuellaRETC transforma datos oficiales de residuos industriales en una experienci
 * **Mini-Charts en Popups:** Gráficos sparkline al hacer clic en una industria.
 
 ### 🖨️ Exportación Profesional
-* **Exportar a PNG:** Captura de alta resolución del reporte de análisis.
-* **Exportar a PDF:** Informes completos con métricas, mapa, tabla de Top 5 y tendencias.
-* **Vista Cenital Automática:** Los mapas se exportan siempre en vista desde arriba (pitch=0°), sin inclinación, para máxima legibilidad en reportes impresos.
+* **Reportes Multi-Página:** Exportación de informes completos de 2 páginas en formato vertical (portrait).
+* **Página 1:** Métricas clave, snapshot del mapa, resumen analítico y tabla de Top 5 generadores.
+* **Página 2:** Ranking gráfico Top 5, evolución temporal (2021-2024) e insights clave.
+* **Exportar a PNG:** Captura de alta resolución (2 archivos separados por página).
+* **Exportar a PDF:** Documento multi-página listo para imprimir o compartir.
+* **Vista Cenital Automática:** Los mapas se exportan siempre en vista desde arriba (pitch=0°).
+* **Contenido Adaptativo Móvil:** En dispositivos móviles, el reporte reemplaza el mapa por:
+  - Peso en la región (% del total regional)
+  - Densidad industrial (industrias/km²)
+  - Principales rubros industriales (top 4)
+  - Principales tipos de residuos LER (top 4)
 
 ### 🎓 Onboarding Interactivo
 * **Modal de Bienvenida:** Introducción a funcionalidades con leyenda de colores.
