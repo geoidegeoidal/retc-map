@@ -38,7 +38,8 @@ describe('SmartReport Component', () => {
         render(<SmartReport analysis={mockAnalysisAlert} />);
 
         expect(screen.getByText(/Alerta: Residuos en alza/i)).toBeInTheDocument();
-        expect(screen.getByText(/15.5%/)).toBeInTheDocument();
+        // The percentage appears in both the badge and the description
+        expect(screen.getAllByText(/15.5%/).length).toBeGreaterThan(0);
         expect(screen.getByText(/Principal rubro: Minería/)).toBeInTheDocument();
     });
 
