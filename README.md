@@ -1,13 +1,16 @@
 # 🌍 HuellaRETC: Monitor Ambiental Ciudadano
 
-![Status](https://img.shields.io/badge/Status-Active-success)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite&logoColor=white)
 ![MapLibre](https://img.shields.io/badge/MapLibre%20GL-4.x-396CB2?logo=mapbox&logoColor=white)
 
 > **Democratizando el acceso a la información ambiental.**
-> Una herramienta de inteligencia territorial open-source que visualiza, analiza y reporta el impacto de la generación de residuos industriales utilizando datos del SINADER/RETC.
+> Explora generadores industriales, compara periodos y prepara reportes con datos de residuos no peligrosos del SINADER/RETC.
+
+**[Inicio rápido](#inicio-rapido) · [Funcionalidades](#funcionalidades) · [Datos](#datos) · [Despliegue](#despliegue)**
+
+> Los tonelajes describen residuos declarados: por sí solos no miden exposición, peligrosidad ni riesgo para la salud.
 
 ---
 
@@ -18,6 +21,33 @@
 
 ---
 
+<a id="inicio-rapido"></a>
+## 💻 Inicio rápido
+
+**Requisitos:** Node.js `^20.19.0 || >=22.12.0` (según Vite en `package-lock.json`) y npm.
+
+```bash
+git clone https://github.com/geoidegeoidal/retc-map.git
+cd retc-map
+npm install
+npm run dev
+```
+
+Abre la URL que indique Vite; con el puerto predeterminado, la ruta del proyecto es **http://localhost:5173/retc-map/**. El GeoJSON ya está incluido: no necesitas regenerar los datos para explorar el visor.
+
+Si la instalación informa un conflicto de dependencias pares de React, revisa primero el mensaje. La alternativa `npm install --legacy-peer-deps` omite esa validación; úsala con esa limitación en cuenta, no como garantía de compatibilidad.
+
+| Comando | Uso |
+| :--- | :--- |
+| `npm run dev` | Desarrollo local |
+| `npm run build` | Generar `dist/` |
+| `npm run preview` | Revisar localmente el build |
+| `npm run lint` | Comprobaciones de ESLint |
+| `npm test` | Ejecutar Vitest |
+
+---
+
+<a id="funcionalidades"></a>
 ## 🚀 Funcionalidades
 
 HuellaRETC transforma datos oficiales de residuos industriales en una experiencia interactiva y comprensible.
@@ -64,7 +94,7 @@ HuellaRETC transforma datos oficiales de residuos industriales en una experienci
 
 ## 🛠️ Stack Tecnológico
 
-El proyecto utiliza una arquitectura **100% Client-Side**. No requiere backend; todo el procesamiento ocurre en el dispositivo del usuario.
+La aplicación utiliza una arquitectura **client-side**: el análisis y la exportación se ejecutan en el navegador, sin un backend propio. Esto no implica funcionamiento sin conexión: la búsqueda de direcciones utiliza Nominatim/OSM.
 
 | Área | Tecnología | Versión | Uso |
 | :--- | :--- | :--- | :--- |
@@ -89,7 +119,7 @@ retc-map/
 │   └── convert_to_geojson.py     # Script de conversión SINADER → GeoJSON
 ├── src/
 │   ├── components/
-│   │   ├── MapBoard.jsx          # Mapa principal (618 líneas)
+│   │   ├── MapBoard.jsx          # Mapa principal
 │   │   │                         #   - Clustering, capas, popups
 │   │   │                         #   - Scan Mode y Spider Lines
 │   │   │                         #   - Leyenda interactiva
@@ -118,44 +148,12 @@ retc-map/
 
 ---
 
-## 💻 Instalación y Uso Local
-
-### Requisitos Previos
-- Node.js 18+
-- npm o pnpm
-
-### Pasos
-
-1. **Clonar el repositorio**
-   ```bash
-   git clone https://github.com/geoidegeoidal/retc-map.git
-   cd retc-map
-   ```
-
-2. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
-   > Si hay problemas con peer dependencies de React 19:
-   > ```bash
-   > npm install --legacy-peer-deps
-   > ```
-
-3. **Correr el servidor de desarrollo**
-   ```bash
-   npm run dev
-   ```
-
-4. **Abrir en el navegador**
-   ```
-   http://localhost:5173
-   ```
-
----
-
+<a id="datos"></a>
 ## 🔄 Actualización de Datos
 
-Los datos provienen del archivo Excel consolidado `gi-sinader-2021_2024-consolidado.xlsx` (SINADER/RETC).
+El visor consume [\`public/retc_data.geojson\`](public/retc_data.geojson), incluido en el repositorio. La regeneración es un paso independiente del uso de la aplicación.
+
+El script espera el Excel consolidado `gi-sinader-2021_2024-consolidado.xlsx` en la raíz; ese archivo **no está incluido**. También requiere un entorno Python con `pandas` y un motor de lectura de XLSX. Prepara esos insumos antes de ejecutar la conversión.
 
 ### Script de Conversión
 
@@ -203,6 +201,7 @@ El script:
 
 ---
 
+<a id="despliegue"></a>
 ## 🚀 Despliegue
 
 ### GitHub Pages
@@ -237,7 +236,7 @@ npm run preview   # Preview local del build
 
 ## 📄 Licencia
 
-MIT License - ver [LICENSE](LICENSE) para más detalles.
+Este proyecto declara licencia MIT en su documentación. El archivo `LICENSE` aún no está incluido en el repositorio; consulta al autor para confirmar los términos antes de redistribuirlo. Esta nota no añade ni modifica una licencia.
 
 ---
 
