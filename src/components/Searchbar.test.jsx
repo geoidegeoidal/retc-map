@@ -4,7 +4,7 @@ import SearchBar from './Searchbar';
 import React from 'react';
 
 // Mock fetch
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 describe('SearchBar Component', () => {
     beforeEach(() => {

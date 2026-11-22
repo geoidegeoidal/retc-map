@@ -1,685 +1,128 @@
-import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import * as turf from '@turf/turf';
-import MiniChart from './MiniChart';
-import { X, ScanEye } from 'lucide-react';
+import { featureCollection, lineString } from '@turf/turf';
+import { Maximize, Minus, Plus, ScanEye } from 'lucide-react';
+import boundaries from '../assets/rm-comunas.json';
+import { bands, number } from '../utils/selection';
+import Footprint from './Footprint';
 
-const MapBoard = forwardRef(function MapBoard({ mapData, onLocationSelect, flyToLocation, radius, highlightedName, highlightedIds }, ref) {
-  // Exponer métodos para control externo del mapa (para exportación)
-  const savedViewRef = useRef(null);
-
-  // Exponer método simple para asegurar vista plana antes de exportar
-  useImperativeHandle(ref, () => ({
-    getMapInstance: () => map.current,
-    resetViewForExport: () => {
-      if (!map.current) return Promise.resolve();
-      return new Promise(resolve => {
-        // Callback cuando el mapa esté totalmente quieto y cargado
-        const onIdle = () => {
-          // Pequeña espera extra de seguridad para el buffer gráfico móvil
-          setTimeout(resolve, 500);
-        };
-
-        // APAGAR TODO LO QUE PUEDA CAUSAR PITCH
-        // Forzar límites en runtime (esto anula cualquier estado previo irreductible)
-        map.current.setMinPitch(0);
-        map.current.setMaxPitch(0);
-
-        // Deshabilitar handlers temporalmente
-        map.current.dragRotate.disable();
-        if (map.current.touchZoomRotate) map.current.touchZoomRotate.disableRotation();
-
-        // Suscribirse a UN solo evento idle
-        map.current.once('idle', onIdle);
-
-        // Forzar vista animada (easeTo vs jumpTo) para obligar al GPU a renderizar frames intermedios
-        // Esto invalida el caché del buffer visual en móviles
-        map.current.easeTo({
-          pitch: 0,
-          bearing: 0,
-          zoom: map.current.getZoom() + 0.0001, // Cambio infinitesimal para forzar recálculo
-          duration: 300, // Duración suficiente para que el driver gráfico despierte
-          easing: t => t // Lineal
-        });
-
-        // Si el mapa ya estaba idle...
-        map.current.triggerRepaint();
-
-        // Fallback de seguridad por si el evento idle nunca llega (ej: tiles cargando infinito)
-        setTimeout(() => {
-          map.current.off('idle', onIdle);
-          resolve();
-        }, 3000);
-      });
-    }
-  }), []);
-  const mapContainer = useRef(null);
-  const map = useRef(null);
-  const marker = useRef(null);
-  const animationRef = useRef(null);
-  const popupRef = useRef(null);
-
-  const latestProps = useRef({ mapData, radius, onLocationSelect });
-  useEffect(() => { latestProps.current = { mapData, radius, onLocationSelect }; }, [mapData, radius, onLocationSelect]);
-
-  const [isMapReady, setIsMapReady] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [popupInfo, setPopupInfo] = useState(null);
-  const [isScanMode, setIsScanMode] = useState(false);
-  const [selectedYear, setSelectedYear] = useState(2024);
-  // Filtros de tonelaje: todos activos por defecto (5 rangos)
-  const [activeFilters, setActiveFilters] = useState({
-    range1: true, // < 30
-    range2: true, // 30-170
-    range3: true, // 170-550
-    range4: true, // 550-1700
-    range5: true  // > 1700
-  });
-  const isScanModeRef = useRef(isScanMode);
-  useEffect(() => { isScanModeRef.current = isScanMode; }, [isScanMode]);
-
-  useEffect(() => {
-    if (!popupInfo || !map.current || !popupRef.current) return;
-    const updatePosition = () => {
-      if (!popupInfo || !popupRef.current) return;
-      const pos = map.current.project(popupInfo.lngLat);
-      popupRef.current.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-    };
-    updatePosition();
-    map.current.on('move', updatePosition);
-    map.current.on('moveend', updatePosition);
-    return () => { if (map.current) { map.current.off('move', updatePosition); map.current.off('moveend', updatePosition); } };
-  }, [popupInfo]);
-
-  const initializeLayers = useCallback(() => {
-    if (!map.current || map.current.getSource('retc-source')) return;
-
-    const layers = map.current.getStyle().layers;
-    let firstSymbolId;
-    for (const layer of layers) { if (layer.type === 'symbol') { firstSymbolId = layer.id; break; } }
-
-    map.current.addSource('buffer-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.current.addSource('connections-source', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-
-    // Source con CLUSTERING habilitado
-    map.current.addSource('retc-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] },
-      cluster: true,
-      clusterMaxZoom: 10,    // Clusters desaparecen antes (zoom 10) para ver puntos individuales
-      clusterRadius: 30      // Radio menor para agrupar menos puntos
+const empty=()=>featureCollection([]);
+const plantSource=()=>({type:'geojson',data:empty(),cluster:true,clusterMaxZoom:10,clusterRadius:34});
+const geo=data=>({type:'geojson',data});
+const communeLabels=featureCollection(boundaries.features.map(f=>({
+  type:'Feature',properties:{name:f.properties.name},geometry:{type:'Point',coordinates:f.properties.anchor}
+})));
+const layer=(id,type,source,paint,extra={})=>({id,type,source,paint,...extra});
+const individual=['!', ['has','point_count']], grouped=['has','point_count'];
+const basemap='atlas-basemap';
+function addBasemap(m){
+  m.addSource(basemap,{type:'vector',url:'https://tiles.openfreemap.org/planet'});
+  for(const [name,type,paint,minzoom] of [
+    ['landcover','fill',{'fill-color':'#d8e4cd','fill-opacity':.45},5],
+    ['park','fill',{'fill-color':'#d0dfc2','fill-opacity':.52},8],
+    ['water','fill',{'fill-color':'#bbd6d6'},0],
+    ['waterway','line',{'line-color':'#aacdce','line-width':1.2},9],
+    ['building','fill',{'fill-color':'#c9c6b4','fill-opacity':.62},14],
+    ['transportation','line',{'line-color':'#fffdf3','line-width':['interpolate',['linear'],['zoom'],7,.45,13,1.6,17,4]},7],
+  ])m.addLayer(layer('base-'+name,type,basemap,paint,{'source-layer':name,minzoom}),'land');
+  m.addLayer({...layer('base-place','symbol',basemap,{'text-color':'#496053','text-halo-color':'#f9f8ef','text-halo-width':1.35},
+    {'source-layer':'place',minzoom:5}),layout:{'text-field':['coalesce',['get','name:es'],['get','name']],
+    'text-font':['Noto Sans Regular'],'text-size':['interpolate',['linear'],['zoom'],5,10,13,14]}},'clusters');
+}
+function baseStyle(){
+  return {version:8,glyphs:new URL(import.meta.env.BASE_URL,window.location.href).href+'fonts/{fontstack}/{range}.pbf',
+    sources:{limits:geo(boundaries),communes:geo(communeLabels),focus:geo(empty()),plants:plantSource(),outside:plantSource(),links:geo(empty()),origin:geo(empty())},
+    layers:[
+      {id:'paper',type:'background',paint:{'background-color':'#e4eadb'}},
+      layer('land','fill','limits',{'fill-color':'#e1e8d8','fill-opacity':.25}),
+      layer('boundaries','line','limits',{'line-color':'#91a389','line-width':1}),
+      {...layer('commune-names','symbol','communes',{'text-color':'#3d5649','text-halo-color':'#faf8ec','text-halo-width':1.5},{minzoom:9}),
+        layout:{'text-field':['get','name'],'text-font':['Noto Sans Regular'],'text-size':12}},
+      layer('scope-fill','fill','focus',{'fill-color':'#9fb676','fill-opacity':.30}),
+      layer('scope-line','line','focus',{'line-color':'#386347','line-width':2}),
+      layer('other','circle','outside',{'circle-color':'#718274','circle-radius':['case',grouped,5,2],'circle-opacity':.45}),
+      layer('connections','line','links',{'line-color':'#286759','line-width':1.8,'line-dasharray':[2,2]}),
+      {...layer('distances','symbol','links',{'text-color':'#224638','text-halo-color':'#faf8eb','text-halo-width':1.4}),layout:{'symbol-placement':'line-center','text-field':['get','label'],'text-font':['Noto Sans Regular'],'text-size':11}},
+      layer('clusters','circle','plants',{'circle-color':'#345a45','circle-radius':['step',['get','point_count'],12,40,17,150,21],'circle-stroke-color':'#f3ebd1','circle-stroke-width':1.5},{filter:grouped}),
+      {...layer('cluster-numbers','symbol','plants',{'text-color':'#fffbea'},{filter:grouped}),layout:{'text-field':['get','point_count_abbreviated'],'text-font':['Noto Sans Regular'],'text-size':11}},
+      layer('radius-halo','circle','plants',{'circle-color':'#9c9f51','circle-radius':11,'circle-opacity':0,'circle-blur':.55},{filter:individual}),
+      layer('active','circle','plants',{'circle-color':'#a46438','circle-radius':5,'circle-stroke-color':'#fff7df','circle-stroke-width':.9},{filter:individual}),
+      layer('target','circle','plants',{'circle-radius':10,'circle-color':'transparent','circle-stroke-width':3,'circle-stroke-color':'#385b46'},{filter:['==',['get','id_vu'],'__none__']}),
+      layer('center','circle','origin',{'circle-radius':6,'circle-color':'#214a3c','circle-stroke-width':2,'circle-stroke-color':'#fcf4ce'})
+    ]};
+}
+function applyAnalysis(m,a){
+  m.getSource('plants').setData(a.points);m.getSource('outside').setData(a.context);
+  m.getSource('focus').setData(a.outline??empty());
+  m.setLayoutProperty('commune-names','visibility',a.scope==='explore'?'visible':'none');
+  m.getSource('origin').setData(featureCollection(a.scope==='radius'?[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:a.center}}]:[]));
+  m.getSource('links').setData(featureCollection(a.nearest.map(r=>lineString([a.center,r.feature.geometry.coordinates],{label:number(r.dist,2)+' km'}))));
+  const prop=['to-number',['get','tonnage_'+a.year],0];
+  m.setPaintProperty('active','circle-color',['step',prop,bands[0].color,...bands.slice(1).flatMap(b=>[b.min,b.color])]);
+  m.setPaintProperty('active','circle-radius',['step',prop,4,30,5,170,6,550,7,1700,9]);
+}
+function frame(m,b){m.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:Math.min(70,Math.max(24,m.getCanvas().clientWidth*.08)),duration:0,maxZoom:15});}
+export default function MapBoard({analysis,scan,onScan,onPick,onCommune,onOpen,highlight}) {
+  const container=useRef(null),map=useRef(null),latest=useRef(null),[ready,setReady]=useState(false),[fallback,setFallback]=useState(false),[baseError,setBaseError]=useState(false);
+  const free=analysis.scope==='explore';
+  const cameraKey=(free?['explore',...(analysis.exploreCenter??[])]:[analysis.scope,analysis.commune,analysis.km,...analysis.center]).join('|');
+  const key=cameraKey+'|'+analysis.year+'|'+analysis.bands.join(',');
+  useEffect(()=>{latest.current={analysis,scan,onPick,onCommune,onOpen,key};},[analysis,scan,onPick,onCommune,onOpen,key]);
+  useEffect(()=>{
+    let m;
+    try{m=new maplibregl.Map({container:container.current,style:baseStyle(),center:latest.current.analysis.center,zoom:11,maxPitch:0,dragRotate:false,touchPitch:false,attributionControl:false});}
+    catch{const id=requestAnimationFrame(()=>setFallback(true));return()=>cancelAnimationFrame(id);}
+    map.current=m;m.touchZoomRotate.disableRotation();
+    const resize=new ResizeObserver(()=>m.resize());resize.observe(container.current);
+    m.on('load',()=>{
+      setReady(true);
+      addBasemap(m);
     });
-
-    map.current.addLayer({ id: 'buffer-fill', type: 'fill', source: 'buffer-source', paint: { 'fill-color': '#10b981', 'fill-opacity': 0.1 } }, firstSymbolId);
-    map.current.addLayer({ id: 'buffer-line', type: 'line', source: 'buffer-source', paint: { 'line-color': '#34d399', 'line-width': 2, 'line-dasharray': [2, 2] } }, firstSymbolId);
-
-    // =====================================================
-    // CLUSTERS - COLOR ÚNICO (sin diferenciación por cantidad)
-    // =====================================================
-
-    // CAPA 1: GLOW EXTERIOR
-    map.current.addLayer({
-      id: 'cluster-glow-outer',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': '#06b6d4',
-        'circle-radius': [
-          'step', ['get', 'point_count'],
-          30, 100, 40, 500, 55
-        ],
-        'circle-opacity': 0.15,
-        'circle-blur': 1
+    m.on('error',e=>{if(e.sourceId===basemap)setBaseError(true);});
+    m.on('sourcedata',e=>{if(e.sourceId===basemap&&e.sourceDataType==='content'&&e.tile?.state==='loaded')setBaseError(false);});
+    m.on('click',async e=>{
+      if(!m.getLayer('active'))return;
+      const cur=latest.current;
+      if(cur.scan){cur.onPick([e.lngLat.lng,e.lngLat.lat]);return;}
+      const box=[[e.point.x-4,e.point.y-4],[e.point.x+4,e.point.y+4]];
+      for(const [id,src] of [['active','plants'],['clusters','plants'],['other','outside']]){
+        const feature=m.queryRenderedFeatures(box,{layers:[id]})[0];if(!feature)continue;
+        if(feature.properties.cluster){
+          try{const zoom=await m.getSource(src).getClusterExpansionZoom(feature.properties.cluster_id);if(map.current===m && latest.current.key===cur.key)m.easeTo({center:feature.geometry.coordinates,zoom:zoom+.1});}catch{/* Cluster replaced while the selection changed. */}
+        }else cur.onOpen(String(feature.properties.id_vu),cur.analysis.year,cur.analysis.scope==='explore'?null:src==='plants');return;
       }
-    }, firstSymbolId);
-
-    // CAPA 2: GLOW MEDIO
-    map.current.addLayer({
-      id: 'cluster-glow-mid',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': '#22d3ee',
-        'circle-radius': [
-          'step', ['get', 'point_count'],
-          22, 100, 28, 500, 38
-        ],
-        'circle-opacity': 0.25,
-        'circle-blur': 0.5
-      }
-    }, firstSymbolId);
-
-    // CAPA 3: CÍRCULO PRINCIPAL
-    map.current.addLayer({
-      id: 'clusters',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': '#0891b2',
-        'circle-radius': [
-          'step', ['get', 'point_count'],
-          14, 100, 18, 500, 24
-        ],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': 'rgba(255, 255, 255, 0.4)'
-      }
-    }, firstSymbolId);
-
-    // CAPA 4: NÚCLEO BRILLANTE
-    map.current.addLayer({
-      id: 'cluster-core',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': '#ffffff',
-        'circle-radius': [
-          'step', ['get', 'point_count'],
-          3, 100, 5, 500, 7
-        ],
-        'circle-opacity': 0.6,
-        'circle-blur': 0.3
-      }
-    }, firstSymbolId);
-
-    // ETIQUETAS DE CLUSTERS
-    map.current.addLayer({
-      id: 'cluster-count',
-      type: 'symbol',
-      source: 'retc-source',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': [
-          'step', ['get', 'point_count'],
-          10, 100, 12, 500, 14
-        ]
-      },
-      paint: {
-        'text-color': '#ffffff',
-        'text-halo-color': 'rgba(0, 0, 0, 0.5)',
-        'text-halo-width': 1
-      }
+      const hit=m.queryRenderedFeatures(e.point,{layers:['land']})[0];
+      if(hit&&cur.analysis.scope==='commune')cur.onCommune(hit.properties.name);
     });
-
-    // LÍNEAS DE CONEXIÓN
-    map.current.addLayer({
-      id: 'connections-line',
-      type: 'line',
-      source: 'connections-source',
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#22d3ee', 'line-width': 1.5, 'line-opacity': 0.4, 'line-dasharray': [1, 3] }
-    }, firstSymbolId);
-
-    // ETIQUETAS DE DISTANCIA
-    map.current.addLayer({
-      id: 'connections-label',
-      type: 'symbol',
-      source: 'connections-source',
-      layout: {
-        'text-field': ['get', 'distLabel'],
-        'symbol-placement': 'line-center',
-        'text-size': 12,
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-offset': [0, -0.8],
-        'text-allow-overlap': false,
-        'text-ignore-placement': false,
-        'text-padding': 5
-      },
-      paint: {
-        'text-color': 'rgba(255, 255, 255, 0.9)',
-        'text-halo-color': '#0f172a',
-        'text-halo-width': 2,
-        'text-opacity': 0.8
-      }
-    });
-
-    // =====================================================
-    // PUNTOS INDIVIDUALES - COLOREADOS POR TONELAJE
-    // Quintiles: <30, 30-170, 170-550, 550-1700, >1700 ton
-    // =====================================================
-
-    // HITBOX (invisible, para clicks)
-    map.current.addLayer({
-      id: 'retc-points-hitbox',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['!', ['has', 'point_count']],
-      paint: { 'circle-color': 'transparent', 'circle-radius': 15 }
-    });
-
-    // PULSE (para animación)
-    map.current.addLayer({
-      id: 'retc-pulse', type: 'circle', source: 'retc-source',
-      filter: ['all', ['!', ['has', 'point_count']], ['in', 'id_vu', '']],
-      paint: { 'circle-color': '#f43f5e', 'circle-radius': 12, 'circle-opacity': 0, 'circle-blur': 0.4 }
-    }, firstSymbolId);
-
-    // HIGHLIGHT (para hover desde leyenda)
-    map.current.addLayer({
-      id: 'retc-highlight', type: 'circle', source: 'retc-source',
-      filter: ['all', ['!', ['has', 'point_count']], ['==', 'name', '']],
-      paint: { 'circle-color': 'transparent', 'circle-radius': 8, 'circle-stroke-width': 3, 'circle-stroke-color': '#fbbf24', 'circle-opacity': 1 }
-    }, firstSymbolId);
-
-    // GLOW POR TONELAJE
-    map.current.addLayer({
-      id: 'retc-glow',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-color': [
-          'step', ['get', 'total_tonnage'],
-          '#22c55e',      // Verde < 30
-          30, '#84cc16',  // Lima 30-170
-          170, '#eab308', // Amarillo 170-550
-          550, '#f97316', // Naranja 550-1700
-          1700, '#ef4444' // Rojo > 1700
-        ],
-        'circle-radius': 7,
-        'circle-opacity': 0.25,
-        'circle-blur': 0.5
-      }
-    }, firstSymbolId);
-
-    // PUNTOS PRINCIPALES - COLOREADOS POR TONELAJE
-    map.current.addLayer({
-      id: 'retc-points',
-      type: 'circle',
-      source: 'retc-source',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-color': [
-          'step', ['get', 'total_tonnage'],
-          '#22c55e',      // Verde < 30 ton
-          30, '#84cc16',  // Lima 30-170 ton
-          170, '#eab308', // Amarillo 170-550 ton
-          550, '#f97316', // Naranja 550-1700 ton
-          1700, '#ef4444' // Rojo > 1700 ton
-        ],
-        'circle-radius': 4,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': 'rgba(255,255,255,0.5)'
-      }
-    }, firstSymbolId);
-
-    if (latestProps.current.mapData) map.current.getSource('retc-source').setData(latestProps.current.mapData);
-  }, []);
-
-  useEffect(() => {
-    if (map.current) return;
-
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-      center: [-70.6483, -33.4569],
-      zoom: 12,
-      attributionControl: false,
-      doubleClickZoom: true,
-      preserveDrawingBuffer: true, // Fix para html2canvas (Pantalla negra)
-      // Desactivar inclinación del mapa completamente
-      maxPitch: 0,
-      pitchWithRotate: false,
-      // Desactivar gestos táctiles de inclinación y rotación
-      touchPitch: false,
-      dragRotate: false,
-      touchZoomRotate: true // Permite zoom táctil pero la rotación está bloqueada por dragRotate/pitchWithRotate
-    });
-
-    map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
-
-    map.current.on('load', () => {
-      initializeLayers();
-      setIsMapReady(true);
-      animatePulse();
-      // CRÍTICO PARA MÓVIL: Desactivar rotación en gestos de dos dedos
-      if (map.current.touchZoomRotate) map.current.touchZoomRotate.disableRotation();
-    });
-
-    map.current.on('click', (e) => {
-      const currentProps = latestProps.current;
-
-      // Primero verificar si se hizo clic en un cluster
-      const clusterFeatures = map.current.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-      if (clusterFeatures.length > 0) {
-        const clusterId = clusterFeatures[0].properties.cluster_id;
-        map.current.getSource('retc-source').getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err) return;
-          map.current.easeTo({
-            center: clusterFeatures[0].geometry.coordinates,
-            zoom: zoom + 0.5
-          });
-        });
-        return;
-      }
-
-      // Luego verificar puntos individuales
-      const features = map.current.queryRenderedFeatures(e.point, { layers: ['retc-points-hitbox'] });
-
-      if (features.length > 0) {
-        const f = features[0];
-        const coords = f.geometry.coordinates.slice();
-        let history = f.properties.history;
-        if (typeof history === 'string') { try { history = JSON.parse(history); } catch (e) { } }
-        setPopupInfo({ lngLat: coords, properties: f.properties, history });
-        map.current.flyTo({ center: coords, speed: 0.5 });
-        setIsScanMode(false);
-      } else if (isScanModeRef.current) {
-        setPopupInfo(null);
-        handleNewLocation(e.lngLat.lng, e.lngLat.lat);
-        updateMapAnalysisLogic(e.lngLat.lng, e.lngLat.lat, currentProps.radius || 3, currentProps.mapData);
-        if (currentProps.onLocationSelect) currentProps.onLocationSelect(e.lngLat);
-      }
-    });
-
-    // Cursor pointer para clusters y puntos
-    map.current.on('mouseenter', 'clusters', () => map.current.getCanvas().style.cursor = 'pointer');
-    map.current.on('mouseleave', 'clusters', () => updateCursorState(false));
-    map.current.on('mouseenter', 'retc-points-hitbox', () => map.current.getCanvas().style.cursor = 'pointer');
-    map.current.on('mouseleave', 'retc-points-hitbox', () => updateCursorState(false));
-
-    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
-  }, []); // eslint-disable-line
-
-  useEffect(() => {
-    if (isMapReady && map.current && map.current.getLayer('retc-highlight')) {
-      if (highlightedName) map.current.setFilter('retc-highlight', ['==', 'name', highlightedName]);
-      else map.current.setFilter('retc-highlight', ['==', 'name', '']);
-    }
-  }, [highlightedName, isMapReady]);
-
-  const updateMapAnalysisLogic = (lng, lat, radiusKm, dataGeoJSON) => {
-    if (!map.current) return;
-    const center = [lng, lat];
-    const options = { steps: 64, units: 'kilometers' };
-    const circleGeo = turf.circle(center, radiusKm, options);
-    if (map.current.getSource('buffer-source')) map.current.getSource('buffer-source').setData(circleGeo);
-
-    if (dataGeoJSON && dataGeoJSON.features) {
-      const pointsWithin = turf.pointsWithinPolygon(dataGeoJSON, circleGeo);
-      const idsToBlink = pointsWithin.features.map(f => f.properties.id_vu);
-      if (map.current.getLayer('retc-pulse')) {
-        if (idsToBlink.length > 0) map.current.setFilter('retc-pulse', ['in', 'id_vu', ...idsToBlink]);
-        else map.current.setFilter('retc-pulse', ['in', 'id_vu', 'NonExistentID']);
-      }
-
-      // Calcular distancia y ordenar por cercanía
-      const pointsWithDistance = pointsWithin.features.map(feature => {
-        const dist = turf.distance(center, feature.geometry.coordinates, { units: 'kilometers' });
-        return { feature, dist };
-      }).sort((a, b) => a.dist - b.dist);
-
-      // SOLO TOP 5 MÁS CERCANAS para evitar saturación visual
-      const top5Nearest = pointsWithDistance.slice(0, 5);
-
-      // Generar líneas solo para las 5 más cercanas
-      const connectionLines = {
-        type: 'FeatureCollection',
-        features: top5Nearest.map(({ feature, dist }) => {
-          const line = turf.lineString([center, feature.geometry.coordinates]);
-          line.properties = {
-            distLabel: `${dist.toFixed(2)} km`
-          };
-          return line;
-        })
-      };
-
-      if (map.current.getSource('connections-source')) {
-        map.current.getSource('connections-source').setData(connectionLines);
-      }
-    }
-  };
-
-  const animatePulse = (timestamp) => {
-    if (!timestamp) timestamp = performance.now(); // Fix NaN
-
-    if (map.current && map.current.getLayer('retc-pulse')) {
-      const opacity = (Math.sin(timestamp / 500) + 1) / 2 * 0.6 + 0.2;
-      const radius = 15 + (Math.sin(timestamp / 500) * 3);
-
-      if (!isNaN(opacity) && !isNaN(radius)) {
-        map.current.setPaintProperty('retc-pulse', 'circle-opacity', opacity);
-        map.current.setPaintProperty('retc-pulse', 'circle-radius', radius);
-      }
-    }
-    animationRef.current = requestAnimationFrame(animatePulse);
-  };
-
-  const updateCursorState = (isHoveringIndustry) => {
-    if (!map.current) return;
-    map.current.getCanvas().style.cursor = isHoveringIndustry ? 'pointer' : (isScanMode ? 'crosshair' : '');
-  };
-  useEffect(() => { updateCursorState(false); }, [isScanMode]);
-
-  useEffect(() => { if (isMapReady && mapData && map.current.getSource('retc-source')) { map.current.getSource('retc-source').setData(mapData); } }, [mapData, isMapReady]);
-  useEffect(() => { if (isMapReady && currentLocation && radius) { updateMapAnalysisLogic(currentLocation.lng, currentLocation.lat, radius, mapData); } }, [radius, currentLocation, isMapReady, mapData]);
-
-  // EFECTO PARA ACTUALIZAR COLORES Y TAMAÑOS DE PUNTOS SEGÚN AÑO SELECCIONADO
-  useEffect(() => {
-    if (!isMapReady || !map.current) return;
-
-    const tonnageProperty = `tonnage_${selectedYear}`;
-
-    // PALETA MÁS DISTINTIVA: Azul → Violeta → Magenta → Naranja → Rojo
-    const colorExpression = [
-      'step', ['get', tonnageProperty],
-      '#3b82f6',      // Azul < 30
-      30, '#8b5cf6',  // Violeta 30-170
-      170, '#d946ef', // Magenta 170-550
-      550, '#f97316', // Naranja 550-1700
-      1700, '#dc2626' // Rojo intenso > 1700
-    ];
-
-    // TAMAÑO PROPORCIONAL AL TONELAJE
-    const sizeExpression = [
-      'step', ['get', tonnageProperty],
-      3,              // Pequeño < 30
-      30, 4,          // Medio-pequeño 30-170
-      170, 5,         // Medio 170-550
-      550, 7,         // Grande 550-1700
-      1700, 10        // Muy grande > 1700
-    ];
-
-    const glowSizeExpression = [
-      'step', ['get', tonnageProperty],
-      5,              // Pequeño < 30
-      30, 6,          // Medio-pequeño 30-170
-      170, 8,         // Medio 170-550
-      550, 10,        // Grande 550-1700
-      1700, 14        // Muy grande > 1700
-    ];
-
-    // CONSTRUIR FILTRO BASADO EN RANGOS ACTIVOS
-    const filterConditions = [];
-    if (activeFilters.range1) filterConditions.push(['<', ['get', tonnageProperty], 30]);
-    if (activeFilters.range2) filterConditions.push(['all', ['>=', ['get', tonnageProperty], 30], ['<', ['get', tonnageProperty], 170]]);
-    if (activeFilters.range3) filterConditions.push(['all', ['>=', ['get', tonnageProperty], 170], ['<', ['get', tonnageProperty], 550]]);
-    if (activeFilters.range4) filterConditions.push(['all', ['>=', ['get', tonnageProperty], 550], ['<', ['get', tonnageProperty], 1700]]);
-    if (activeFilters.range5) filterConditions.push(['>=', ['get', tonnageProperty], 1700]);
-
-    // Combinar filtros: mostrar si cumple cualquiera de los rangos activos Y no es un cluster
-    const visibilityFilter = filterConditions.length > 0
-      ? ['all', ['!', ['has', 'point_count']], ['any', ...filterConditions]]
-      : ['all', ['!', ['has', 'point_count']], false]; // Ocultar todo si ningún filtro activo
-
-    // Actualizar capa de puntos principales
-    if (map.current.getLayer('retc-points')) {
-      map.current.setPaintProperty('retc-points', 'circle-color', colorExpression);
-
-      // Si hay IDs destacados, aumentar un poco su tamaño para que resalten más
-      let finalSizeExpression = sizeExpression;
-      if (highlightedIds && highlightedIds.length > 0) {
-        const stringIds = highlightedIds.map(String);
-        const isHighlighted = ['in', ['get', 'id_vu'], ['literal', stringIds]];
-
-        // Stroke blanco brillante para los destacados
-        map.current.setPaintProperty('retc-points', 'circle-stroke-color', '#ffffff');
-        map.current.setPaintProperty('retc-points', 'circle-stroke-width', ['case', isHighlighted, 3, 0]);
-
-        // Aumentar tamaño 50% si está destacado
-        // Nota: MapLibre permite expresiones matemáticas con otras expresiones
-        // Pero para mayor seguridad, dejaremos el tamaño base y confiaremos en el stroke grueso blanco
-      } else {
-        map.current.setPaintProperty('retc-points', 'circle-stroke-width', 0);
-      }
-
-      map.current.setPaintProperty('retc-points', 'circle-radius', sizeExpression);
-      map.current.setFilter('retc-points', visibilityFilter);
-    }
-    // Actualizar capa de glow
-    if (map.current.getLayer('retc-glow')) {
-      map.current.setPaintProperty('retc-glow', 'circle-color', colorExpression);
-      map.current.setPaintProperty('retc-glow', 'circle-radius', glowSizeExpression);
-      map.current.setFilter('retc-glow', visibilityFilter);
-    }
-    // Actualizar hitbox también
-    if (map.current.getLayer('retc-points-hitbox')) {
-      map.current.setFilter('retc-points-hitbox', visibilityFilter);
-    }
-  }, [selectedYear, isMapReady, activeFilters, highlightedIds]);
-
-  useEffect(() => {
-    if (isMapReady && flyToLocation) {
-      const { lng, lat } = flyToLocation;
-      map.current.flyTo({ center: [lng, lat], zoom: 13.5 });
-      setCurrentLocation({ lng, lat });
-      if (marker.current) marker.current.setLngLat([lng, lat]);
-      else marker.current = new maplibregl.Marker({ color: '#f43f5e' }).setLngLat([lng, lat]).addTo(map.current);
-      updateMapAnalysisLogic(lng, lat, radius || 3, mapData);
-      setPopupInfo(null);
-      setIsScanMode(true);
-    }
-  }, [flyToLocation, isMapReady]);
-
-  const handleNewLocation = (lng, lat) => {
-    setCurrentLocation({ lng, lat });
-    if (marker.current) marker.current.setLngLat([lng, lat]);
-    else marker.current = new maplibregl.Marker({ color: '#f43f5e' }).setLngLat([lng, lat]).addTo(map.current);
-    updateMapAnalysisLogic(lng, lat, radius || 3, mapData);
-    onLocationSelect({ lng, lat });
-  };
-  const closePopup = (e) => { e.stopPropagation(); setPopupInfo(null); };
-  const toggleScanMode = () => { setIsScanMode(!isScanMode); };
-
-  return (
-    <div ref={mapContainer} className="w-full h-screen absolute top-0 left-0">
-      <button
-        onClick={toggleScanMode}
-        // 🔴 AQUÍ ESTÁ EL CAMBIO DE POSICIÓN: top-20 right-4
-        className={`absolute top-20 right-4 z-10 p-2.5 rounded-lg shadow-xl border transition-all duration-300 group ${isScanMode ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-slate-900/90 backdrop-blur border-slate-600 text-slate-400 hover:text-white hover:border-slate-500'}`}
-        title="Activar modo análisis"
-      >
-        <ScanEye size={20} className={isScanMode ? 'animate-pulse' : ''} />
-      </button>
-
-      {/* LEYENDA CON SELECTOR DE AÑO Y FILTROS */}
-      <div className="absolute bottom-20 md:bottom-6 left-2 md:left-4 z-10 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl p-2 md:p-3 shadow-xl max-w-[170px] md:max-w-[200px]">
-        {/* SELECTOR DE AÑO */}
-        <div className="mb-2 pb-2 border-b border-white/10">
-          <p className="text-[7px] md:text-[8px] text-slate-500 uppercase tracking-wider font-bold mb-1">Seleccionar año de datos</p>
-          <div className="flex gap-1">
-            {[2021, 2022, 2023, 2024].map(year => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={`text-[9px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-all ${selectedYear === year
-                  ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* FILTRO POR TONELAJE - Clickeable */}
-        <p className="text-[7px] md:text-[8px] text-slate-500 uppercase tracking-wider font-bold mb-1.5">Filtrar por toneladas ({selectedYear})</p>
-        <div className="flex flex-col gap-1 md:gap-1.5">
-          {/* Range 1: < 30 */}
-          <button
-            onClick={() => setActiveFilters(f => ({ ...f, range1: !f.range1 }))}
-            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range1 ? 'opacity-100' : 'opacity-40'}`}
-          >
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">&lt; 30 ton</span>
-          </button>
-          {/* Range 2: 30-170 */}
-          <button
-            onClick={() => setActiveFilters(f => ({ ...f, range2: !f.range2 }))}
-            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range2 ? 'opacity-100' : 'opacity-40'}`}
-          >
-            <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-violet-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">30-170 ton</span>
-          </button>
-          {/* Range 3: 170-550 */}
-          <button
-            onClick={() => setActiveFilters(f => ({ ...f, range3: !f.range3 }))}
-            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range3 ? 'opacity-100' : 'opacity-40'}`}
-          >
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-fuchsia-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">170-550 ton</span>
-          </button>
-          {/* Range 4: 550-1700 */}
-          <button
-            onClick={() => setActiveFilters(f => ({ ...f, range4: !f.range4 }))}
-            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range4 ? 'opacity-100' : 'opacity-40'}`}
-          >
-            <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-orange-500 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">550-1.7k ton</span>
-          </button>
-          {/* Range 5: > 1700 */}
-          <button
-            onClick={() => setActiveFilters(f => ({ ...f, range5: !f.range5 }))}
-            className={`flex items-center gap-1.5 md:gap-2 w-full text-left transition-opacity ${activeFilters.range5 ? 'opacity-100' : 'opacity-40'}`}
-          >
-            <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-red-600 border border-white/30 shrink-0"></div>
-            <span className="text-[9px] md:text-[10px] text-slate-300">&gt; 1.7k ton</span>
-          </button>
-        </div>
-        {/* Clusters */}
-        <div className="hidden md:block mt-2 pt-2 border-t border-white/5">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-cyan-600 border border-white/30"></div>
-            <span className="text-[10px] text-slate-400">Cluster (agrupados)</span>
-          </div>
-        </div>
-      </div>
-
-      {popupInfo && (
-        <div ref={popupRef} className="absolute top-0 left-0 z-50 pointer-events-none will-change-transform">
-          <div className="transform -translate-x-1/2 -translate-y-[105%]">
-            <div className="w-60 p-3 bg-slate-950/70 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50 pointer-events-auto relative transition-all animate-in fade-in zoom-in-95 slide-in-from-bottom-2">
-              <button onClick={closePopup} className="absolute -top-2 -right-2 bg-slate-800 text-slate-400 hover:text-white hover:bg-rose-500 rounded-full p-1 border border-slate-700 shadow-lg transition-all"><X size={12} /></button>
-              <div className="mb-1">
-                <h3 className="font-bold text-slate-100 text-xs leading-tight mb-0.5 pr-2">{popupInfo.properties.name}</h3>
-                <span className="inline-block px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-bold text-cyan-400 tracking-wide uppercase mb-1">{popupInfo.properties.category}</span>
-                {/* Lista de Residuos */}
-                <div className="mt-1 mb-1 p-1 bg-black/20 rounded border border-white/5 text-[8px] text-slate-300 font-medium leading-tight max-h-[40px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
-                  <span className="text-slate-500 mr-1">Residuos:</span>
-                  {popupInfo.properties.residues || "Sin detalle"}
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                <MiniChart history={popupInfo.history} color="#22d3ee" />
-              </div>
-            </div>
-            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900/80 absolute left-1/2 -translate-x-1/2 bottom-[-6px] blur-[1px]"></div>
-          </div>
-        </div>
-      )}
-      <div className="absolute bottom-1 right-1 pointer-events-none text-[8px] text-white/20 select-none">
-        v2.1 (No-Tilt Checked)
-      </div>
-    </div>
-  );
-});
-
-export default MapBoard;
+    return()=>{resize.disconnect();map.current=null;m.remove();};
+  },[]);
+  useEffect(()=>{if(ready && map.current)applyAnalysis(map.current,analysis);},[analysis,ready]);
+  useEffect(()=>{if(ready&&map.current)frame(map.current,latest.current.analysis.bounds);},[cameraKey,ready]);
+  useEffect(()=>{if(ready && map.current)map.current.setFilter('target',['==',['to-string',['get','id_vu']],highlight||'__none__']);},[highlight,ready]);
+  useEffect(()=>{if(ready && map.current)map.current.getCanvas().style.cursor=scan?'crosshair':'';},[scan,ready]);
+  useEffect(()=>{
+    if(!ready||!map.current)return;
+    const m=map.current,radial=analysis.scope==='radius';
+    m.setPaintProperty('radius-halo','circle-opacity',radial?.22:0);
+    if(!radial||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    const id=setInterval(()=>{if(!document.hidden)m.setPaintProperty('radius-halo','circle-opacity',.22+.16*Math.sin(performance.now()/600));},220);
+    return()=>clearInterval(id);
+  },[ready,analysis.scope]);
+  useEffect(()=>{
+    if(!ready||!map.current||analysis.scope!=='commune')return;
+    const region=boundaries.features.find(f=>f.properties.name===analysis.commune);
+    const el=document.createElement('span');el.className='district-label';el.textContent=analysis.commune;
+    const label=new maplibregl.Marker({element:el}).setLngLat(region.properties.anchor).addTo(map.current);
+    return()=>label.remove();
+  },[ready,analysis.scope,analysis.commune]);
+  return <div className="workmap"><div ref={container} className="glmap" hidden={fallback}/>
+    {fallback&&<><Footprint analysis={analysis} scan={scan} onPick={onPick} onPlant={p=>onOpen(String(p.id_vu),analysis.year,free?null:true)}/><small className="map-fallback">Mapa simplificado · sin WebGL</small></>}
+    {baseError&&!fallback&&!scan&&<small className="map-fallback" role="status">Mapa base no disponible. Los datos RETC siguen visibles.</small>}
+    <div className="map-tools"><button type="button" className={scan?'on':''} aria-pressed={scan} onClick={onScan}><ScanEye size={16}/>{scan?'Cancelar escáner':'Escanear punto'}</button>
+      {!fallback&&<div><button aria-label="Acercar mapa" onClick={()=>map.current?.zoomIn()}><Plus size={16}/></button><button aria-label={free?'Encuadrar mapa':'Encuadrar análisis'} onClick={()=>map.current&&frame(map.current,analysis.bounds)}><Maximize size={15}/></button></div>}</div>
+    {scan&&<p className="scan-hint" role="status">Pulsa el mapa para centrar el radio de {analysis.km} km.</p>}
+    <div className="map-key"><span><i/>{free?'Establecimientos filtrados':'En el análisis'}</span>{!free&&<span><i/>Fuera del ámbito</span>}</div>
+    <div className="map-credit"><a href="https://openfreemap.org/" target="_blank" rel="noreferrer">OpenFreeMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a></div>
+  </div>;
+}

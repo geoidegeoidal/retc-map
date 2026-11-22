@@ -2,7 +2,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 const COLORS = [
-  '#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'
+  '#305b44', '#a05432', '#517c8a', '#8a772d', '#755c78'
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // 🔴 ACEPTAMOS LA PROP onHoverHighlight
-export default function HistoryChart({ data, keys, onHoverHighlight }) {
+export default function HistoryChart({ data, keys, labels={}, onHoverHighlight }) {
   if (!data || data.length === 0 || !keys || keys.length === 0) {
     return <div className="h-40 flex items-center justify-center border border-dashed border-slate-700 rounded-lg bg-slate-800/30"><p className="text-slate-500 text-xs">Sin datos.</p></div>;
   }
@@ -39,7 +39,7 @@ export default function HistoryChart({ data, keys, onHoverHighlight }) {
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} opacity={0.5} />
-          <XAxis dataKey="year" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} dy={10} interval={0} padding={{ left: 20, right: 20 }} />
+          <XAxis dataKey="year" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} dy={10} interval="preserveStartEnd" minTickGap={9} padding={{ left: 20, right: 20 }} />
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#fff', strokeWidth: 1, strokeDasharray: '4 4', opacity: 0.3 }} />
           
           {/* 🔴 LEYENDA INTERACTIVA */}
@@ -57,6 +57,7 @@ export default function HistoryChart({ data, keys, onHoverHighlight }) {
               key={keyName}
               type="monotone" 
               dataKey={keyName} 
+              name={labels[keyName] || keyName}
               stroke={COLORS[index % COLORS.length]} 
               strokeWidth={2}
               dot={false}

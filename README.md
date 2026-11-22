@@ -12,6 +12,18 @@
 
 > Los tonelajes describen residuos declarados: por sí solos no miden exposición, peligrosidad ni riesgo para la salud.
 
+### Un mapa, un análisis
+
+**Explorar** es la vista inicial: desplázate y acerca el mapa sin seleccionar un territorio. Puedes consultar fichas y comparar visualmente los establecimientos de distintas comunas con el mismo año y tramo. Buscar una dirección centra el mapa sin cambiar de modo. Los totales, la comparación interanual y los informes se habilitan al delimitar una **Comuna** o un **Radio**.
+
+Elige **Comuna** para estudiar una de las 52 comunas de la Región Metropolitana o **Radio** para analizar 1, 3 o 5 km en cualquier punto de Chile. Usa el buscador de direcciones o **Escanear punto** para mover el centro. El año y los tramos de tonelaje se mantienen al cambiar de ámbito. Los puntos grises son contexto y no entran en el informe.
+
+En **Cambios**, los establecimientos se ordenan por su aporte absoluto a la variación frente al año anterior. Los mismos tramos se aplican a cada año por separado: así entran tanto las altas como los descensos a cero o las salidas del tramo. El primer año no tiene comparación, y una base cero no produce un porcentaje ficticio. **Generadores**, **Evolución** y **Contexto** muestran el ranking anual, el historial del top 5 y datos territoriales complementarios.
+
+**Informe** exporta PDF o dos PNG del ámbito, centro (si aplica), año y tramos activos. La cartografía del documento se dibuja con esa selección y no depende de una captura en tránsito ni de teselas externas. Se usan los emplazamientos y las regiones/comunas declaradas en el GeoJSON y [límites comunales simplificados](https://github.com/caracena/chile-geojson/blob/master/13.geojson).
+
+Los números de los grupos y las distancias utilizan el [glifo latino de Noto Sans distribuido por MapLibre](https://github.com/maplibre/demotiles/tree/gh-pages/font/Noto%20Sans%20Regular), incluido localmente con [su licencia](public/atlas-labels-LICENSE.txt).
+
 ---
 
 ## 📸 Vistazo Rápido
@@ -52,43 +64,14 @@ Si la instalación informa un conflicto de dependencias pares de React, revisa p
 
 HuellaRETC transforma datos oficiales de residuos industriales en una experiencia interactiva y comprensible.
 
-### 🗺️ Exploración Geoespacial
-* **Mapa Vectorial Dark Mode:** Renderizado de alto rendimiento con **MapLibre GL JS** v4.
-* **11,444 Establecimientos:** Visualización de generadores industriales de residuos no peligrosos (2021-2024).
-* **Clustering Inteligente:** Agrupación dinámica de puntos según el nivel de zoom.
-* **Buscador Inteligente:** Encuentra direcciones exactas en Chile usando la API de **Nominatim/OSM**.
-* **Modo Escáner (Scan Mode):** Herramienta táctica que activa análisis espacial al hacer clic en cualquier punto del mapa.
+### Herramientas disponibles
 
-### 🧠 Análisis en el Navegador (100% Client-Side)
-* **Buffers Dinámicos:** Cálculo matemático instantáneo con radios de 1, 3 y 5 km usando **Turf.js**.
-* **Spider Lines (Líneas Neón):** Conexiones visuales desde tu ubicación hacia las industrias cercanas con etiquetas de distancia.
-* **Feedback Reactivo:** Las industrias dentro del radio parpadean suavemente para facilitar su identificación.
-* **Filtros Temporales:** Selector de año (2021-2024) para analizar evolución temporal.
-* **Filtros por Tonelaje:** Filtra puntos según rangos de generación (<30t, 30-170t, 170-550t, 550-1.7K, >1.7K).
+- Mapa MapLibre con agrupaciones, zoom, encuadre, fichas e historial de establecimientos, límites comunales y teselas de [OpenFreeMap](https://openfreemap.org/) sin clave. Si falla el mapa base, los puntos del RETC y los límites locales siguen disponibles. El escáner radial dibuja las conexiones a los cinco establecimientos activos más cercanos.
+- Búsqueda de direcciones en Chile, filtro anual de 2014 a 2025 y cinco tramos de tonelaje. En pantallas estrechas, abre **Controles** para editar el ámbito y los filtros.
+- Total y recuento anuales, variación interanual, ranking de generadores, contribuciones al cambio, serie histórica, densidad, rubros y residuos. Selecciona una fila de Cambios o Generadores para abrir la ficha, incluso si el establecimiento salió del análisis en el año actual. Los registros con tonelaje positivo cuentan como establecimientos del año.
+- Informe en dos páginas: ámbito, filtros, mapa y ranking en la primera; evolución, contribuciones y contexto en la segunda. Mismo contenido en móvil y escritorio, en PDF o PNG.
+- Guía accesible desde la cabecera; el primer acceso abre el mapa directamente.
 
-### 📊 Storytelling & Datos
-* **Dashboard Responsivo:** Panel lateral con estadísticas y gráficos.
-* **Gráficos Históricos:** Visualización de tendencias del Top 5 industrias del área seleccionada (2021-2024) con **Recharts**.
-* **Leyenda Interactiva:** Hover en leyenda resalta industrias correspondientes en el mapa.
-* **Smart Report:** Generación automática de resúmenes en lenguaje natural (*"Tendencia al alza del 38%..."*).
-* **Mini-Charts en Popups:** Gráficos sparkline al hacer clic en una industria.
-
-### 🖨️ Exportación Profesional
-* **Reportes Multi-Página:** Exportación de informes completos de 2 páginas en formato vertical (portrait).
-* **Página 1:** Métricas clave, snapshot del mapa, resumen analítico y tabla de Top 5 generadores.
-* **Página 2:** Ranking gráfico Top 5, evolución temporal (2021-2024) e insights clave.
-* **Exportar a PNG:** Captura de alta resolución (2 archivos separados por página).
-* **Exportar a PDF:** Documento multi-página listo para imprimir o compartir.
-* **Vista Cenital Automática:** Los mapas se exportan siempre en vista desde arriba (pitch=0°).
-* **Contenido Adaptativo Móvil:** En dispositivos móviles, el reporte reemplaza el mapa por:
-  - Peso en la región (% del total regional)
-  - Densidad industrial (industrias/km²)
-  - Principales rubros industriales (top 4)
-  - Principales tipos de residuos LER (top 4)
-
-### 🎓 Onboarding Interactivo
-* **Modal de Bienvenida:** Introducción a funcionalidades con leyenda de colores.
-* **Tutorial Guiado:** Tour paso a paso de las 4 funcionalidades principales.
 
 ---
 
@@ -99,7 +82,7 @@ La aplicación utiliza una arquitectura **client-side**: el análisis y la expor
 | Área | Tecnología | Versión | Uso |
 | :--- | :--- | :--- | :--- |
 | **Core** | React + Vite | 19 / 7.x | Framework moderno con HMR ultra-rápido |
-| **Estilos** | Tailwind CSS | 3.4 | Diseño UI responsivo, Dark Mode |
+| **Estilos** | Tailwind CSS | 3.4 | Interfaz adaptable e identidad Atlas |
 | **Mapa** | MapLibre GL JS | 4.x | Mapas vectoriales WebGL (fork libre de Mapbox) |
 | **Geo-Cálculo** | Turf.js | 7.x | Análisis espacial (buffers, distancias, intersecciones) |
 | **Gráficos** | Recharts | 3.5 | Charts interactivos (LineChart, custom tooltips) |
@@ -114,7 +97,7 @@ La aplicación utiliza una arquitectura **client-side**: el análisis y la expor
 ```text
 retc-map/
 ├── public/
-│   └── retc_data.geojson         # 11,444 establecimientos (GeoJSON)
+│   └── retc_data.geojson         # 14.480 establecimientos históricos (GeoJSON)
 ├── scripts/
 │   └── convert_to_geojson.py     # Script de conversión SINADER → GeoJSON
 ├── src/
@@ -151,53 +134,26 @@ retc-map/
 <a id="datos"></a>
 ## 🔄 Actualización de Datos
 
-El visor consume [\`public/retc_data.geojson\`](public/retc_data.geojson), incluido en el repositorio. La regeneración es un paso independiente del uso de la aplicación.
+El visor consume [`public/retc_data.geojson`](public/retc_data.geojson), derivado de los 12 libros publicados en el [catálogo oficial de generación industrial de residuos no peligrosos](https://datosretc.mma.gob.cl/dataset/residuos). La base de datos derivada conserva la [licencia ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) del catálogo; esto no cambia la licencia del código.
 
-El script espera el Excel consolidado `gi-sinader-2021_2024-consolidado.xlsx` en la raíz; ese archivo **no está incluido**. También requiere un entorno Python con `pandas` y un motor de lectura de XLSX. Prepara esos insumos antes de ejecutar la conversión.
+### Regenerar y validar una copia
 
-### Script de Conversión
+1. Descarga las URLs de [`scripts/sinader-sources.json`](scripts/sinader-sources.json) a una carpeta externa al repositorio, guardando cada recurso como `AAAA.xlsx`.
+2. En un entorno Python con `python-calamine`, ejecuta, desde la raíz:
 
 ```bash
-cd scripts
-python convert_to_geojson.py
+python scripts/convert_to_geojson.py /ruta/a/libros scripts/sinader-sources.json --output /ruta/a/retc-candidato.geojson
 ```
 
-El script:
-1. Lee el archivo Excel consolidado
-2. Filtra registros con coordenadas válidas
-3. Agrupa por establecimiento (`id_vu`) y año
-4. Genera propiedades con tonelaje por año (`tonnage_2021`, `tonnage_2022`, etc.)
-5. Exporta a `public/retc_data.geojson`
+3. Revisa la cobertura por año (filas, establecimientos y toneladas de la fuente, dentro y fuera de cobertura geográfica). Sustituye `public/retc_data.geojson` solo después de validar la copia. El script se niega a sobrescribir una salida existente.
 
-### Estructura del GeoJSON
+### Qué significan los datos en el visor
 
-```json
-{
-  "type": "Feature",
-  "properties": {
-    "id_vu": "123456",
-    "name": "Razón Social",
-    "category": "Rubro Industrial",
-    "comuna": "Santiago",
-    "region": "Metropolitana",
-    "total_tonnage": 1234.56,
-    "tonnage_2021": 300.00,
-    "tonnage_2022": 320.00,
-    "tonnage_2023": 290.00,
-    "tonnage_2024": 324.56,
-    "history": [
-      {"year": 2021, "value": 300.00},
-      {"year": 2022, "value": 320.00},
-      {"year": 2023, "value": 290.00},
-      {"year": 2024, "value": 324.56}
-    ]
-  },
-  "geometry": {
-    "type": "Point",
-    "coordinates": [-70.6506, -33.4372]
-  }
-}
-```
+- El conversor suma el tonelaje de los generadores industriales por **ID de Ventanilla Única y año**. Admite los años históricos sin código de flujo y excluye entradas si el archivo identifica el flujo. No combina los libros oficiales con el consolidado antiguo del proyecto.
+- Se usa la ubicación válida más frecuente para **ese establecimiento y año** cuando existen coordenadas discrepantes. Un ID sin coordenadas utilizables en ese año no se asigna a ningún ámbito. La comuna usa el nombre declarado, no la intersección con el polígono.
+- Los valores marcados como atípicos por la fuente se conservan, sin corregirlos ni descartarlos. Las diferencias interanuales pueden reflejar cambios en la cobertura, ubicación o datos del registro.
+- La colección incluye `years` y `coverage` con enlaces, SHA-256 y controles de conciliación. Las features conservan `tonnage_AAAA` para los años registrados y guardan cambios de ubicación o detalle en `locations` y `annual_details`. No incluye RUT ni datos de trazabilidad de terceros.
+
 
 ---
 
@@ -229,7 +185,7 @@ npm run preview   # Preview local del build
 | :--- | :--- |
 | **RETC** | Registro de Emisiones y Transferencia de Contaminantes |
 | **SINADER** | Sistema Nacional de Declaración de Residuos |
-| **Periodo** | 2021 - 2024 |
+| **Periodo** | 2014–2025 (todos los años del catálogo GI) |
 | **Categoría** | Generadores Industriales (GI) de residuos no peligrosos |
 
 ---
